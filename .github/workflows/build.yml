@@ -1,0 +1,103 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.24.0'
+  SKYDOGE_WALLET_DIR: skydoge_wallet
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get commit info
+        id: commit
+        run: |
+          echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+          echo "short_sha=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_OUTPUT
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+          cache-key: flutter-${{ env.FLUTTER_VERSION }}
+
+      - name: Get dependencies
+        run: |
+          cd ${{ env.SKYDOGE_WALLET_DIR }}
+          flutter pub get
+
+      - name: Build debug APK
+        run: |
+          cd ${{ env.SKYDOGE_WALLET_DIR }}
+          flutter build apk --debug
+
+      - name: Build release APK
+        run: |
+          cd ${{ env.SKYDOGE_WALLET_DIR }}
+          flutter build apk --release
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts
+          cp ${{ env.SKYDOGE_WALLET_DIR }}/build/app/outputs/flutter-apk/app-debug.apk artifacts/
+          cp ${{ env.SKYDOGE_WALLET_DIR }}/build/app/outputs/flutter-apk/app-release.apk artifacts/
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk-${{ steps.commit.outputs.short_sha }}
+          path: artifacts/app-debug.apk
+          retention-days: 30
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk-${{ steps.commit.outputs.short_sha }}
+          path: artifacts/app-release.apk
+          retention-days: 90
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main'
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/app-release.apk
+            artifacts/app-debug.apk
+          body: |
+            ## Skydoge Wallet APK Build
+            
+            **Build Version**: ${{ steps.commit.outputs.short_sha }}
+            **Commit**: ${{ github.sha }}
+            **Date**: ${{ github.event.head_commit.timestamp }}
+            
+            ### Downloads
+            - `skydoge-wallet-${{ steps.commit.outputs.short_sha }}-release.apk` - Production build
+            - `skydoge-wallet-${{ steps.commit.outputs.short_sha }}-debug.apk` - Debug build
+            
+            ### Installation
+            1. Download the release APK
+            2. Enable "Install from unknown sources" in device settings
+            3. Install and enjoy!
+            
+            ---
+            *Built automatically from commit `${{ github.sha }}`*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
