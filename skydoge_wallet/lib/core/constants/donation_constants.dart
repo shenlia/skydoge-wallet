@@ -1,5 +1,5 @@
 class DonationConstants {
-  static const String donationAddress = 'SfeeAddressForDonation1234567890abcd';
+  static const String donationAddress = '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc';
   static const double donationRate = 0.001;
   static const String donationDescription = 'Skydoge Development Fund';
 
