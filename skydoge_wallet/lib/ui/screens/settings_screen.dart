@@ -6,6 +6,7 @@ import '../../blocs/wallet/wallet_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/donation_constants.dart';
 import '../../core/utils/formatters.dart';
+import '../../data/repositories/node_repository.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -15,8 +16,11 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  final NodeRepository _nodeRepository = NodeRepository();
   bool _biometricEnabled = false;
   bool _donationEnabled = true;
+  bool _useCustomNode = false;
+  NodeConfig? _customNodeConfig;
 
   @override
   Widget build(BuildContext context) {
@@ -203,9 +207,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.dns),
             title: const Text('Custom Node'),
+            subtitle: FutureBuilder<bool>(
+              future: _nodeRepository.isUsingCustomNode(),
+              builder: (context, snapshot) {
+                final usingCustom = snapshot.data ?? false;
+                return Text(
+                  usingCustom ? 'Enabled' : 'Using default',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: usingCustom ? AppTheme.successColor : Colors.grey[400],
+                  ),
+                );
+              },
+            ),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              // TODO: Implement custom node settings
+              _showCustomNodeDialog(context);
             },
           ),
         ],
@@ -370,6 +387,143 @@ class _SettingsScreenState extends State<SettingsScreen> {
               context.read<WalletBloc>().add(const DeleteWalletEvent());
             },
             child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCustomNodeDialog(BuildContext context) {
+    final hostController = TextEditingController();
+    final portController = TextEditingController(text: '8332');
+    final userController = TextEditingController();
+    final passwordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Custom Node Configuration'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Connect to your own Skydoge node by providing the RPC configuration below.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: hostController,
+                decoration: const InputDecoration(
+                  labelText: 'Host',
+                  hintText: 'e.g., node1.skydoge.net',
+                  prefixIcon: Icon(Icons.dns),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: portController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Port',
+                  hintText: '8332 (mainnet) or 18332 (testnet)',
+                  prefixIcon: Icon(Icons.numbers),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: userController,
+                decoration: const InputDecoration(
+                  labelText: 'RPC Username',
+                  prefixIcon: Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'RPC Password',
+                  prefixIcon: Icon(Icons.lock),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.warningColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.warning, color: AppTheme.warningColor, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Make sure your node has RPC enabled and allows connections from your device.',
+                        style: TextStyle(fontSize: 11, color: AppTheme.warningColor),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await _nodeRepository.resetToDefault();
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Reset to default node')),
+                );
+                setState(() {});
+              }
+            },
+            child: const Text('Reset to Default'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final host = hostController.text.trim();
+              final port = int.tryParse(portController.text.trim()) ?? 8332;
+              final user = userController.text.trim();
+              final password = passwordController.text.trim();
+
+              if (host.isEmpty || user.isEmpty || password.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please fill in all fields')),
+                );
+                return;
+              }
+
+              final config = NodeConfig(
+                host: host,
+                port: port,
+                user: user,
+                password: password,
+              );
+
+              await _nodeRepository.saveCustomNodeConfig(config);
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Custom node saved. Restart app to apply.'),
+                    backgroundColor: AppTheme.successColor,
+                  ),
+                );
+                setState(() {});
+              }
+            },
+            child: const Text('Save'),
           ),
         ],
       ),

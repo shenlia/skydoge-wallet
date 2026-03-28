@@ -4,18 +4,68 @@ import 'package:http/http.dart' as http;
 import '../core/constants/network_constants.dart';
 import '../data/models/wallet.dart';
 import '../data/models/transaction.dart';
+import '../data/repositories/node_repository.dart';
 
 class RpcService {
-  final NetworkConfig config;
+  final String rpcUrl;
+  final String authHeader;
   final http.Client _client;
+  final bool isTestnet;
 
-  RpcService({
-    required this.config,
+  RpcService._({
+    required this.rpcUrl,
+    required this.authHeader,
+    required this.isTestnet,
     http.Client? client,
   }) : _client = client ?? http.Client();
 
+  factory RpcService({
+    required NetworkConfig config,
+    http.Client? client,
+  }) {
+    return RpcService._(
+      rpcUrl: config.rpcUrl,
+      authHeader: config.authHeader,
+      isTestnet: config.isTestnet,
+      client: client,
+    );
+  }
+
+  factory RpcService.fromNodeConfig({
+    required NodeConfig config,
+    required bool isTestnet,
+    http.Client? client,
+  }) {
+    return RpcService._(
+      rpcUrl: config.rpcUrl,
+      authHeader: config.authHeader,
+      isTestnet: isTestnet,
+      client: client,
+    );
+  }
+
+  static Future<RpcService> create({required bool isTestnet}) async {
+    final nodeRepository = NodeRepository();
+    final useCustom = await nodeRepository.isUsingCustomNode();
+
+    if (useCustom) {
+      final customConfig = await nodeRepository.getCustomNodeConfig();
+      if (customConfig != null) {
+        return RpcService.fromNodeConfig(
+          config: customConfig,
+          isTestnet: isTestnet,
+        );
+      }
+    }
+
+    final defaultConfig = isTestnet
+        ? NetworkConfig.testnet()
+        : NetworkConfig.mainnet();
+    return RpcService(config: defaultConfig);
+  }
+
   Future<dynamic> call(String method, [List<dynamic>? params]) async {
-    final url = Uri.parse(config.rpcUrl);
+    final url = Uri.parse(rpcUrl);
     final body = jsonEncode({
       'jsonrpc': '1.0',
       'id': DateTime.now().millisecondsSinceEpoch,
@@ -27,7 +77,7 @@ class RpcService {
       final response = await _client.post(
         url,
         headers: {
-          'Authorization': config.authHeader,
+          'Authorization': authHeader,
           'Content-Type': 'text/plain',
         },
         body: body,
