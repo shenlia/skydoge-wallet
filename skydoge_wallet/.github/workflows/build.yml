@@ -16,10 +16,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version-file: pubspec.yaml
+      - name: Install Flutter
+        run: |
+          cd /opt
+          wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz -O flutter.tar.xz
+          tar xf flutter.tar.xz
+          rm flutter.tar.xz
+          echo "/opt/flutter/bin" >> $GITHUB_PATH
+
+      - name: Verify Flutter
+        run: |
+          flutter --version
+          flutter doctor
 
       - name: Get dependencies
         run: flutter pub get
@@ -42,10 +50,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version-file: pubspec.yaml
+      - name: Install Flutter
+        run: |
+          cd /opt
+          wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz -O flutter.tar.xz
+          tar xf flutter.tar.xz
+          rm flutter.tar.xz
+          echo "/opt/flutter/bin" >> $GITHUB_PATH
 
       - name: Get dependencies
         run: flutter pub get
