@@ -67,3 +67,29 @@ class DeleteWalletEvent extends WalletEvent {
 class CheckWalletExistsEvent extends WalletEvent {
   const CheckWalletExistsEvent();
 }
+
+class CompleteBackupEvent extends WalletEvent {
+  const CompleteBackupEvent();
+}
+
+class SetupPinEvent extends WalletEvent {
+  final String pin;
+
+  const SetupPinEvent({required this.pin});
+
+  @override
+  List<Object?> get props => [pin];
+}
+
+class ImportWalletFromWifEvent extends WalletEvent {
+  final String wif;
+  final bool isTestnet;
+
+  const ImportWalletFromWifEvent({
+    required this.wif,
+    this.isTestnet = false,
+  });
+
+  @override
+  List<Object?> get props => [wif, isTestnet];
+}

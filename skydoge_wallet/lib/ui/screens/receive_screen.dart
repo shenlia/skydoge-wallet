@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../generated/l10n.dart';
 
 class ReceiveScreen extends StatelessWidget {
   final String address;
@@ -13,10 +14,11 @@ class ReceiveScreen extends StatelessWidget {
   });
 
   void _copyAddress(BuildContext context) {
+    final s = S.of(context);
     Clipboard.setData(ClipboardData(text: address));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Address copied to clipboard'),
+      SnackBar(
+        content: Text(s.addressCopied),
         backgroundColor: AppTheme.successColor,
       ),
     );
@@ -24,9 +26,10 @@ class ReceiveScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Receive SKYDOGE'),
+        title: Text(s.receive),
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
@@ -40,9 +43,9 @@ class ReceiveScreen extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            const Text(
-              'Scan QR code to receive SKYDOGE',
-              style: TextStyle(
+            Text(
+              s.scanQrToReceive,
+              style: const TextStyle(
                 fontSize: 16,
                 color: Colors.grey,
               ),
@@ -85,9 +88,9 @@ class ReceiveScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Text(
-                    'Your Address',
-                    style: TextStyle(
+                  Text(
+                    s.yourAddress,
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -111,7 +114,7 @@ class ReceiveScreen extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => _copyAddress(context),
                     icon: const Icon(Icons.copy),
-                    label: const Text('Copy Address'),
+                    label: Text(s.copyAddress),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -121,7 +124,7 @@ class ReceiveScreen extends StatelessWidget {
                       // TODO: Implement share functionality
                     },
                     icon: const Icon(Icons.share),
-                    label: const Text('Share'),
+                    label: Text(s.share),
                   ),
                 ),
               ],
@@ -136,17 +139,17 @@ class ReceiveScreen extends StatelessWidget {
                   color: AppTheme.warningColor.withOpacity(0.3),
                 ),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.info_outline,
                     color: AppTheme.warningColor,
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Only send SKYDOGE to this address. Sending other assets may result in permanent loss.',
-                      style: TextStyle(
+                      s.onlySendSkydoge,
+                      style: const TextStyle(
                         fontSize: 12,
                         color: AppTheme.warningColor,
                       ),

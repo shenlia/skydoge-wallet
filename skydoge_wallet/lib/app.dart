@@ -72,6 +72,8 @@ class _WalletWrapperState extends State<WalletWrapper> {
           );
         } else if (state is WalletLocked) {
           return const LockScreen();
+        } else if (state is WalletUnlocked) {
+          return const HomeScreen();
         } else if (state is WalletLoaded) {
           return const HomeScreen();
         } else if (state is WalletError) {

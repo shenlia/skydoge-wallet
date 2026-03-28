@@ -21,11 +21,14 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
     on<CheckWalletExistsEvent>(_onCheckWalletExists);
     on<CreateWalletEvent>(_onCreateWallet);
     on<RecoverWalletEvent>(_onRecoverWallet);
+    on<ImportWalletFromWifEvent>(_onImportWalletFromWif);
     on<UnlockWalletEvent>(_onUnlockWallet);
     on<LockWalletEvent>(_onLockWallet);
     on<RefreshBalanceEvent>(_onRefreshBalance);
     on<SwitchNetworkEvent>(_onSwitchNetwork);
     on<BackupWalletEvent>(_onBackupWallet);
+    on<CompleteBackupEvent>(_onCompleteBackup);
+    on<SetupPinEvent>(_onSetupPin);
     on<DeleteWalletEvent>(_onDeleteWallet);
   }
 
@@ -50,7 +53,14 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
       } else if (hasPin) {
         emit(WalletLocked(hasPin: true));
       } else {
-        emit(const WalletNotFound());
+        final walletData = await _secureStorageService.getWalletData();
+        if (walletData != null) {
+          final wallet = Wallet.fromJson(walletData);
+          _initRpcService(wallet.network == 1);
+          emit(WalletUnlocked(wallet: wallet));
+        } else {
+          emit(const WalletNotFound());
+        }
       }
     } catch (e) {
       emit(WalletError(message: 'Failed to check wallet: $e'));
@@ -119,6 +129,37 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
       emit(WalletCreated(wallet: wallet, mnemonic: event.mnemonic));
     } catch (e) {
       emit(WalletError(message: 'Failed to recover wallet: $e'));
+    }
+  }
+
+  Future<void> _onImportWalletFromWif(
+    ImportWalletFromWifEvent event,
+    Emitter<WalletState> emit,
+  ) async {
+    emit(const WalletLoading());
+
+    try {
+      final walletData = _addressService.importFromWif(
+        event.wif,
+        isTestnet: event.isTestnet,
+      );
+
+      final wallet = Wallet(
+        mnemonic: '',
+        seed: '',
+        privateKey: walletData.privateKey,
+        publicKey: walletData.publicKey,
+        receivingAddress: walletData.receivingAddress,
+        network: walletData.network,
+        createdAt: DateTime.now(),
+        walletType: 'wif',
+      );
+
+      await _secureStorageService.saveWalletData(wallet.toJson());
+
+      emit(WalletCreated(wallet: wallet, mnemonic: ''));
+    } catch (e) {
+      emit(WalletError(message: 'Failed to import wallet from WIF: $e'));
     }
   }
 
@@ -241,6 +282,43 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
       emit(WalletBackedUp(mnemonic: mnemonic));
     } catch (e) {
       emit(WalletError(message: 'Failed to backup wallet: $e'));
+    }
+  }
+
+  Future<void> _onCompleteBackup(
+    CompleteBackupEvent event,
+    Emitter<WalletState> emit,
+  ) async {
+    try {
+      final walletData = await _secureStorageService.getWalletData();
+      if (walletData != null) {
+        final wallet = Wallet.fromJson(walletData);
+        _initRpcService(wallet.network == 1);
+        emit(WalletUnlocked(wallet: wallet));
+      } else {
+        emit(const WalletError(message: 'Wallet data not found'));
+      }
+    } catch (e) {
+      emit(WalletError(message: 'Failed to complete backup: $e'));
+    }
+  }
+
+  Future<void> _onSetupPin(
+    SetupPinEvent event,
+    Emitter<WalletState> emit,
+  ) async {
+    try {
+      await _secureStorageService.savePin(event.pin);
+      final walletData = await _secureStorageService.getWalletData();
+      if (walletData != null) {
+        final wallet = Wallet.fromJson(walletData);
+        _initRpcService(wallet.network == 1);
+        emit(WalletUnlocked(wallet: wallet));
+      } else {
+        emit(const WalletError(message: 'Wallet data not found'));
+      }
+    } catch (e) {
+      emit(WalletError(message: 'Failed to setup PIN: $e'));
     }
   }
 

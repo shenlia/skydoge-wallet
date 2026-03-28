@@ -11,7 +11,6 @@ class BuildTransactionEvent extends TransactionEvent {
   final String toAddress;
   final int amount;
   final int feeRate;
-  final bool includeDonation;
   final String fromAddress;
   final String privateKey;
 
@@ -19,13 +18,12 @@ class BuildTransactionEvent extends TransactionEvent {
     required this.toAddress,
     required this.amount,
     required this.feeRate,
-    required this.includeDonation,
     required this.fromAddress,
     required this.privateKey,
   });
 
   @override
-  List<Object?> get props => [toAddress, amount, feeRate, includeDonation, fromAddress, privateKey];
+  List<Object?> get props => [toAddress, amount, feeRate, fromAddress, privateKey];
 }
 
 class SignTransactionEvent extends TransactionEvent {
@@ -47,13 +45,4 @@ class SetFeeRateEvent extends TransactionEvent {
 
   @override
   List<Object?> get props => [feeLevel];
-}
-
-class SetDonationEnabledEvent extends TransactionEvent {
-  final bool enabled;
-
-  const SetDonationEnabledEvent({required this.enabled});
-
-  @override
-  List<Object?> get props => [enabled];
 }

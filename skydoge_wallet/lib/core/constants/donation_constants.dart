@@ -1,19 +1,22 @@
+import 'network_constants.dart';
+
 class DonationConstants {
   static const String donationAddress = '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc';
-  static const double donationRate = 0.001;
+  static const double donationRate = 0.0001;
   static const String donationDescription = 'Skydoge Development Fund';
+  static const int dustThreshold = NetworkConstants.dustThreshold;
 
   static int calculateDonationFee(int amountSatoshis) {
     return (amountSatoshis * donationRate).floor();
   }
 
-  static int calculateRecipientAmount(int totalAmountSatoshis) {
-    final fee = calculateDonationFee(totalAmountSatoshis);
-    return totalAmountSatoshis - fee;
+  static bool isDonationBelowDust(int amountSatoshis) {
+    final fee = calculateDonationFee(amountSatoshis);
+    return fee > 0 && fee < dustThreshold;
   }
 
-  static int calculateTotalAmount(int recipientAmount) {
-    return (recipientAmount / (1 - donationRate)).ceil();
+  static String getDonationBelowDustWarning() {
+    return 'Donation amount (${dustThreshold} satoshis minimum) is below the dust threshold. Please increase the send amount.';
   }
 }
 

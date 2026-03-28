@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../../blocs/wallet/wallet_state.dart';
 import '../../blocs/transaction/transaction_bloc.dart';
@@ -9,6 +8,7 @@ import '../../blocs/transaction/transaction_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/donation_constants.dart';
 import '../../core/utils/formatters.dart';
+import '../../generated/l10n.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -21,7 +21,6 @@ class _SendScreenState extends State<SendScreen> {
   final _addressController = TextEditingController();
   final _amountController = TextEditingController();
   String _feeLevel = 'medium';
-  bool _includeDonation = true;
   String? _error;
 
   @override
@@ -32,31 +31,37 @@ class _SendScreenState extends State<SendScreen> {
   }
 
   void _buildTransaction() {
+    final s = S.of(context);
     final address = _addressController.text.trim();
     final amountText = _amountController.text.trim();
 
     if (address.isEmpty) {
-      setState(() => _error = 'Please enter a recipient address');
+      setState(() => _error = s.pleaseEnterValidAddress);
       return;
     }
 
     if (!Validators.isValidSkydogeAddress(address)) {
-      setState(() => _error = 'Invalid Skydoge address');
+      setState(() => _error = s.invalidAddress);
       return;
     }
 
     if (amountText.isEmpty) {
-      setState(() => _error = 'Please enter an amount');
+      setState(() => _error = s.pleaseEnterValidAmount);
       return;
     }
 
     final amount = double.tryParse(amountText);
     if (amount == null || amount <= 0) {
-      setState(() => _error = 'Invalid amount');
+      setState(() => _error = s.invalidAddress);
       return;
     }
 
     final amountSatoshis = (amount * 100000000).round();
+
+    if (DonationConstants.isDonationBelowDust(amountSatoshis)) {
+      setState(() => _error = DonationConstants.getDonationBelowDustWarning());
+      return;
+    }
 
     final walletState = context.read<WalletBloc>().state;
     if (walletState is! WalletLoaded) return;
@@ -67,58 +72,59 @@ class _SendScreenState extends State<SendScreen> {
       toAddress: address,
       amount: amountSatoshis,
       feeRate: feeRate,
-      includeDonation: _includeDonation,
       fromAddress: walletState.wallet.receivingAddress,
       privateKey: walletState.wallet.privateKey,
     ));
   }
 
   void _showConfirmationDialog(BuildContext context, TransactionBuilt state) {
+    final s = S.of(context);
     final donationFee = state.donationFee;
     final totalAmount = state.amount;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Transaction'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(s.confirmTransaction),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('To:', Formatters.formatAddress(state.toAddress)),
+            _buildDetailRow(s.recipientAddress, Formatters.formatAddress(state.toAddress)),
             const SizedBox(height: 8),
-            _buildDetailRow('Amount:', Formatters.formatSatoshis(totalAmount)),
-            if (_includeDonation && donationFee > 0) ...[
+            _buildDetailRow(s.amount, Formatters.formatSatoshis(totalAmount)),
+            if (donationFee > 0) ...[
               const SizedBox(height: 8),
               _buildDetailRow(
-                'Donation (0.1%):',
-                Formatters.formatSatoshis(donationFee),
+                s.donationFee,
+                '${Formatters.formatSatoshis(donationFee)} (0.01%)',
                 valueColor: AppTheme.accentColor,
-              ),
-              const SizedBox(height: 8),
-              _buildDetailRow(
-                'You send:',
-                Formatters.formatSatoshis(totalAmount + donationFee),
               ),
             ],
             const SizedBox(height: 8),
             _buildDetailRow(
-              'Fee:',
+              s.fee,
               Formatters.formatSatoshis(state.transaction.fee),
+            ),
+            const Divider(),
+            _buildDetailRow(
+              s.total,
+              Formatters.formatSatoshis(totalAmount + donationFee + state.transaction.fee),
+              valueColor: AppTheme.primaryColor,
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(s.cancel),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               context.read<TransactionBloc>().add(const SignTransactionEvent());
             },
-            child: const Text('Confirm & Send'),
+            child: Text(s.confirmSend),
           ),
         ],
       ),
@@ -137,9 +143,10 @@ class _SendScreenState extends State<SendScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Send SKYDOGE'),
+        title: Text(s.sendSkydoge),
       ),
       body: BlocConsumer<TransactionBloc, TransactionState>(
         listener: (context, state) {
@@ -148,8 +155,9 @@ class _SendScreenState extends State<SendScreen> {
           } else if (state is TransactionBroadcasted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Transaction sent! TXID: ${Formatters.formatTxid(state.txid)}'),
+                content: Text('${s.transactionSent}\nTXID: ${Formatters.formatTxid(state.txid)}'),
                 backgroundColor: AppTheme.successColor,
+                duration: const Duration(seconds: 5),
               ),
             );
             Navigator.pop(context);
@@ -166,16 +174,10 @@ class _SendScreenState extends State<SendScreen> {
                 TextField(
                   controller: _addressController,
                   decoration: InputDecoration(
-                    labelText: 'Recipient Address',
-                    hintText: 'Enter Skydoge address or scan QR',
+                    labelText: s.recipientAddress,
+                    hintText: s.enterRecipientAddress,
                     prefixIcon: const Icon(Icons.person),
-                    errorText: _error?.contains('address') == true ? _error : null,
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.qr_code_scanner),
-                      onPressed: () {
-                        // TODO: Implement QR scanning
-                      },
-                    ),
+                    errorText: _error?.contains('address') == true || _error?.contains('Invalid') == true ? _error : null,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -183,33 +185,25 @@ class _SendScreenState extends State<SendScreen> {
                   controller: _amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Amount',
+                    labelText: s.amount,
                     hintText: '0.0',
                     prefixIcon: const Icon(Icons.monetization_on),
                     suffixText: 'SKYDOGE',
-                    errorText: _error?.contains('amount') == true ? _error : null,
+                    errorText: _error?.contains('amount') == true || _error?.contains('below') == true ? _error : null,
                   ),
-                  onChanged: (value) {
-                    if (value.isNotEmpty) {
-                      final amount = double.tryParse(value);
-                      if (amount != null) {
-                        final donation = DonationConstants.calculateDonationFee((amount * 100000000).round());
-                        setState(() {});
-                      }
-                    }
-                  },
+                  onChanged: (value) => setState(() {}),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Transaction Fee',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                Text(
+                  s.transactionFee,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'low', label: Text('Low')),
-                    ButtonSegment(value: 'medium', label: Text('Medium')),
-                    ButtonSegment(value: 'high', label: Text('High')),
+                  segments: [
+                    ButtonSegment(value: 'low', label: Text(s.lowFee)),
+                    ButtonSegment(value: 'medium', label: Text(s.mediumFee)),
+                    ButtonSegment(value: 'high', label: Text(s.highFee)),
                   ],
                   selected: {_feeLevel},
                   onSelectionChanged: (value) {
@@ -218,55 +212,60 @@ class _SendScreenState extends State<SendScreen> {
                 ),
                 const SizedBox(height: 24),
                 Card(
-                  child: SwitchListTile(
-                    title: const Text('Include 0.1% Donation'),
-                    subtitle: Text(
-                      'Supports Skydoge development\nDonation address: ${Formatters.formatAddress(DonationConstants.donationAddress)}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                  color: AppTheme.accentColor.withOpacity(0.1),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.volunteer_activism, color: AppTheme.accentColor),
+                            const SizedBox(width: 8),
+                            Text(
+                              s.includeDonation,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.accentColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${s.donationDesc}\n${s.donationAmount} 0.01%\n${Formatters.formatAddress(DonationConstants.donationAddress)}',
+                          style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                        ),
+                      ],
                     ),
-                    value: _includeDonation,
-                    onChanged: (value) {
-                      setState(() => _includeDonation = value);
-                    },
-                    secondary: Container(
-                      padding: const EdgeInsets.all(8),
+                  ),
+                ),
+                if (_amountController.text.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Builder(builder: (context) {
+                    final amount = double.tryParse(_amountController.text) ?? 0;
+                    final donation = DonationConstants.calculateDonationFee((amount * 100000000).round());
+                    return Container(
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppTheme.accentColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
-                        Icons.volunteer_activism,
-                        color: AppTheme.accentColor,
-                      ),
-                    ),
-                  ),
-                ),
-                if (_includeDonation && _amountController.text.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Donation Amount:'),
-                        Builder(builder: (context) {
-                          final amount = double.tryParse(_amountController.text) ?? 0;
-                          final donation = DonationConstants.calculateDonationFee((amount * 100000000).round());
-                          return Text(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${s.donationAmount} (0.01%):'),
+                          Text(
                             Formatters.formatSatoshis(donation),
                             style: const TextStyle(
                               color: AppTheme.accentColor,
                               fontWeight: FontWeight.bold,
                             ),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                 ],
                 const SizedBox(height: 32),
                 if (state is TransactionBuilding || state is TransactionSigning || state is TransactionBroadcasting)
@@ -274,9 +273,9 @@ class _SendScreenState extends State<SendScreen> {
                 else
                   ElevatedButton(
                     onPressed: _buildTransaction,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Text('Continue'),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(s.continueBtn),
                     ),
                   ),
               ],

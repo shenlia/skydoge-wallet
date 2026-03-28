@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:hex/hex.dart';
 import '../core/constants/donation_constants.dart';
+import '../core/constants/network_constants.dart';
 import '../data/models/transaction.dart';
 import 'rpc_service.dart';
 import 'address_service.dart';
@@ -20,7 +21,7 @@ class TransactionService {
     required int amount,
     required String fromAddress,
     required int feeRate,
-    required bool includeDonation,
+    bool includeDonation = true,
     int minConfirmations = 1,
   }) async {
     if (!_addressService.validateAddress(toAddress)) {
@@ -38,26 +39,31 @@ class TransactionService {
       throw TransactionException('No eligible UTXOs found');
     }
 
-    int donationFee = 0;
-    int recipientAmount = amount;
+    final donationFee = includeDonation 
+        ? DonationConstants.calculateDonationFee(amount)
+        : 0;
 
-    if (includeDonation) {
-      donationFee = DonationConstants.calculateDonationFee(amount);
-      recipientAmount = DonationConstants.calculateRecipientAmount(amount);
+    if (includeDonation && DonationConstants.isDonationBelowDust(amount)) {
+      throw TransactionException(DonationConstants.getDonationBelowDustWarning());
     }
 
-    final totalNeeded = recipientAmount + donationFee;
-    final List<Utxo> selectedUtxos = [];
+    final recipientAmount = amount;
+    final totalOutput = recipientAmount + donationFee;
+
+    int estimatedFee = 0;
     int selectedAmount = 0;
+    final List<Utxo> selectedUtxos = [];
 
     for (final utxo in eligibleUtxos) {
       selectedUtxos.add(utxo);
       selectedAmount += utxo.amount;
-      if (selectedAmount >= totalNeeded) break;
+      estimatedFee = _estimateTransactionSize(selectedUtxos.length, totalOutput > 0 ? 2 : 1) * feeRate;
+      
+      if (selectedAmount >= totalOutput + estimatedFee) break;
     }
 
-    if (selectedAmount < totalNeeded) {
-      throw TransactionException('Insufficient funds: need $totalNeeded, have $selectedAmount');
+    if (selectedAmount < totalOutput + estimatedFee) {
+      throw TransactionException('Insufficient funds: need ${totalOutput + estimatedFee}, have $selectedAmount');
     }
 
     final inputs = selectedUtxos.map((utxo) => TxInput(
@@ -89,7 +95,7 @@ class TransactionService {
     final estimatedSize = _estimateTransactionSize(inputs.length, outputs.length);
     final fee = estimatedSize * feeRate;
 
-    final change = selectedAmount - totalNeeded - fee;
+    final change = selectedAmount - totalOutput - fee;
     if (change > 0) {
       outputs.add(TxOutput(
         address: fromAddress,
@@ -142,10 +148,6 @@ class TransactionService {
 
   int calculateDonationFee(int amount) {
     return DonationConstants.calculateDonationFee(amount);
-  }
-
-  int calculateRecipientAmount(int totalAmount) {
-    return DonationConstants.calculateRecipientAmount(totalAmount);
   }
 }
 

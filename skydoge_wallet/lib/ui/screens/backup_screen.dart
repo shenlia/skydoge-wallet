@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../../blocs/wallet/wallet_event.dart';
-import '../../blocs/wallet/wallet_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/wallet.dart';
+import '../../generated/l10n.dart';
 
 class BackupScreen extends StatefulWidget {
   final Wallet wallet;
@@ -26,30 +26,33 @@ class _BackupScreenState extends State<BackupScreen> {
   bool _showMnemonic = false;
 
   void _proceed() {
+    final s = S.of(context);
     if (!_hasConfirmedBackup) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please confirm that you have backed up your mnemonic phrase'),
+        SnackBar(
+          content: Text(s.pleaseConfirmBackup),
         ),
       );
       return;
     }
 
-    context.read<WalletBloc>().add(const CheckWalletExistsEvent());
+    context.read<WalletBloc>().add(const CompleteBackupEvent());
   }
 
   void _copyMnemonic() {
+    final s = S.of(context);
     Clipboard.setData(ClipboardData(text: widget.mnemonic));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Mnemonic copied to clipboard')),
+      SnackBar(content: Text(s.mnemonicCopied)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Backup Wallet'),
+        title: Text(s.backupWallet),
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
@@ -64,17 +67,17 @@ class _BackupScreenState extends State<BackupScreen> {
                 color: AppTheme.warningColor,
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Important: Save Your Mnemonic',
+              Text(
+                s.importantSaveMnemonic,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 16),
               Text(
-                'Write down these 12 words in order and store them safely. This is the only way to recover your wallet if you lose access to your device.',
+                s.mnemonicDescription,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -97,9 +100,9 @@ class _BackupScreenState extends State<BackupScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Your Mnemonic Phrase',
-                          style: TextStyle(
+                        Text(
+                          s.yourMnemonicPhrase,
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -115,12 +118,12 @@ class _BackupScreenState extends State<BackupScreen> {
                     if (_showMnemonic)
                       _buildMnemonicGrid()
                     else
-                      _buildHiddenMnemonic(),
+                      _buildHiddenMnemonic(s),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: _copyMnemonic,
                       icon: const Icon(Icons.copy),
-                      label: const Text('Copy to Clipboard'),
+                      label: Text(s.copyToClipboard),
                     ),
                   ],
                 ),
@@ -129,8 +132,9 @@ class _BackupScreenState extends State<BackupScreen> {
               CheckboxListTile(
                 value: _hasConfirmedBackup,
                 onChanged: (value) => setState(() => _hasConfirmedBackup = value ?? false),
-                title: const Text(
-                  'I have written down my mnemonic phrase and understand it is my only recovery method',
+                title: Text(
+                  s.iHaveWrittenDown,
+                  style: const TextStyle(fontSize: 14),
                 ),
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
@@ -138,7 +142,7 @@ class _BackupScreenState extends State<BackupScreen> {
               const Spacer(),
               ElevatedButton(
                 onPressed: _proceed,
-                child: const Text('I Understand, Continue'),
+                child: Text(s.iUnderstandContinue),
               ),
             ],
           ),
@@ -171,7 +175,7 @@ class _BackupScreenState extends State<BackupScreen> {
     );
   }
 
-  Widget _buildHiddenMnemonic() {
+  Widget _buildHiddenMnemonic(S s) {
     return Container(
       height: 100,
       alignment: Alignment.center,
@@ -181,7 +185,7 @@ class _BackupScreenState extends State<BackupScreen> {
           const Icon(Icons.lock, size: 40, color: Colors.grey),
           const SizedBox(height: 8),
           Text(
-            'Tap the eye icon to reveal',
+            s.tapToReveal,
             style: TextStyle(color: Colors.grey[400]),
           ),
         ],

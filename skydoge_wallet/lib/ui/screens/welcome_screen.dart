@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../../blocs/wallet/wallet_event.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/address_service.dart';
 import '../../generated/l10n.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -14,13 +15,18 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
   final _mnemonicController = TextEditingController();
+  final _wifController = TextEditingController();
+  final AddressService _addressService = AddressService();
   bool _isRecoverMode = false;
+  bool _isWifMode = false;
   bool _isTestnet = false;
   bool _isLoading = false;
+  String? _importError;
 
   @override
   void dispose() {
     _mnemonicController.dispose();
+    _wifController.dispose();
     super.dispose();
   }
 
@@ -41,6 +47,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     setState(() => _isLoading = true);
     context.read<WalletBloc>().add(RecoverWalletEvent(
       mnemonic: _mnemonicController.text.trim(),
+      isTestnet: _isTestnet,
+    ));
+  }
+
+  void _importFromWif() {
+    final s = S.of(context);
+    final wif = _wifController.text.trim();
+    
+    if (wif.isEmpty) {
+      setState(() => _importError = 'Please enter WIF private key');
+      return;
+    }
+
+    if (!_addressService.isValidWif(wif)) {
+      setState(() => _importError = 'Invalid WIF format');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    context.read<WalletBloc>().add(ImportWalletFromWifEvent(
+      wif: wif,
       isTestnet: _isTestnet,
     ));
   }
@@ -80,7 +107,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
               ),
               const SizedBox(height: 48),
-              if (!_isRecoverMode) ...[
+              if (!_isRecoverMode && !_isWifMode) ...[
                 _buildOptionCard(
                   icon: Icons.add_circle_outline,
                   title: s.createNewWallet,
@@ -95,29 +122,60 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   description: s.recoverExistingWalletDesc,
                   onTap: () => setState(() => _isRecoverMode = true),
                 ),
+                const SizedBox(height: 16),
+                _buildOptionCard(
+                  icon: Icons.vpn_key,
+                  title: s.importFromWif ?? 'Import from WIF',
+                  description: s.importFromWifDesc ?? 'Import wallet using WIF private key',
+                  onTap: () => setState(() => _isWifMode = true),
+                ),
               ] else ...[
                 _buildBackButton(s),
                 const SizedBox(height: 24),
-                TextField(
-                  controller: _mnemonicController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: s.mnemonicPhrase,
-                    hintText: s.enterMnemonicHint,
-                    prefixIcon: const Icon(Icons.key),
+                if (_isRecoverMode) ...[
+                  TextField(
+                    controller: _mnemonicController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: s.mnemonicPhrase,
+                      hintText: s.enterMnemonicHint,
+                      prefixIcon: const Icon(Icons.key),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _recoverWallet,
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(s.recoverWallet),
-                ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _recoverWallet,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(s.recoverWallet),
+                  ),
+                ],
+                if (_isWifMode) ...[
+                  TextField(
+                    controller: _wifController,
+                    decoration: InputDecoration(
+                      labelText: s.wifPrivateKey ?? 'WIF Private Key',
+                      hintText: s.enterWifHint ?? 'Enter WIF private key',
+                      prefixIcon: const Icon(Icons.vpn_key),
+                      errorText: _importError,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _importFromWif,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(s.importWallet ?? 'Import Wallet'),
+                  ),
+                ],
               ],
               const SizedBox(height: 24),
               _buildNetworkSwitch(s),
@@ -195,7 +253,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Widget _buildBackButton(S s) {
     return TextButton.icon(
-      onPressed: () => setState(() => _isRecoverMode = false),
+      onPressed: () => setState(() {
+        _isRecoverMode = false;
+        _isWifMode = false;
+        _importError = null;
+      }),
       icon: const Icon(Icons.arrow_back),
       label: Text(s.back),
     );

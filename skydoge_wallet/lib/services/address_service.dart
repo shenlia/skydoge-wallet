@@ -4,8 +4,14 @@ import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip32/bip32.dart' as bip32;
 import 'package:pointycastle/export.dart';
 import 'package:hex/hex.dart';
+import '../core/constants/network_constants.dart';
 
 class AddressService {
+  final ChainConfig _chainConfig;
+
+  AddressService({ChainConfig? chainConfig}) 
+      : _chainConfig = chainConfig ?? ChainConfig.mainnet;
+
   Future<String> generateMnemonic() async {
     return bip39.generateMnemonic();
   }
@@ -14,11 +20,12 @@ class AddressService {
     final seed = bip39.mnemonicToSeed(mnemonic);
     final root = bip32.BIP32.fromSeed(seed);
 
-    final child = root.derivePath("m/44'/0'/0'/0/0");
+    final child = root.derivePath(WalletConstants.hdWalletPath);
     final privateKey = child.privateKey!;
     final publicKey = child.publicKey;
 
-    final address = _deriveAddress(publicKey, isTestnet: isTestnet);
+    final chainCfg = isTestnet ? ChainConfig.testnet : ChainConfig.mainnet;
+    final address = _deriveAddress(publicKey, chainConfig: chainCfg);
 
     return WalletData(
       mnemonic: mnemonic,
@@ -30,15 +37,67 @@ class AddressService {
     );
   }
 
-  String _deriveAddress(Uint8List publicKey, {bool isTestnet = false}) {
+  WalletData importFromWif(String wif, {bool isTestnet = false}) {
+    final privateKeyBytes = _decodeWif(wif, isTestnet: isTestnet);
+    final publicKey = _publicKeyFromPrivateKey(privateKeyBytes);
+    final chainCfg = isTestnet ? ChainConfig.testnet : ChainConfig.mainnet;
+    final address = _deriveAddress(publicKey, chainConfig: chainCfg);
+
+    return WalletData(
+      mnemonic: '',
+      seed: '',
+      privateKey: HEX.encode(privateKeyBytes),
+      publicKey: HEX.encode(publicKey),
+      receivingAddress: address,
+      network: isTestnet ? 1 : 0,
+      walletType: 'wif',
+    );
+  }
+
+  List<int> _decodeWif(String wif, {required bool isTestnet}) {
+    final decoded = base58Decode(wif);
+    if (decoded.length < 4) {
+      throw Exception('Invalid WIF format');
+    }
+
+    final withoutChecksum = decoded.sublist(0, decoded.length - 4);
+    final checksum = decoded.sublist(decoded.length - 4);
+    final calculatedChecksum = _doubleSha256(withoutChecksum).sublist(0, 4);
+
+    if (!_listEquals(checksum, calculatedChecksum)) {
+      throw Exception('Invalid WIF checksum');
+    }
+
+    final expectedVersion = isTestnet ? 0xEF : 0x80;
+    if (withoutChecksum[0] != expectedVersion) {
+      throw Exception('Invalid WIF version byte');
+    }
+
+    List<int> privateKeyBytes;
+    if (withoutChecksum.length == 34) {
+      privateKeyBytes = withoutChecksum.sublist(1, 33);
+    } else if (withoutChecksum.length == 33) {
+      privateKeyBytes = withoutChecksum.sublist(1);
+    } else {
+      throw Exception('Invalid WIF length');
+    }
+
+    return privateKeyBytes;
+  }
+
+  bool _listEquals<T>(List<T> a, List<T> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  String _deriveAddress(Uint8List publicKey, {required ChainConfig chainConfig}) {
     final sha256Hash = _sha256(publicKey);
     final ripeHash160 = _ripemd160(sha256Hash);
 
-    if (isTestnet) {
-      return _encodeP2PKH(ripeHash160, version: 0x6F);
-    } else {
-      return _encodeP2PKH(ripeHash160, version: 0x00);
-    }
+    return _encodeP2PKH(ripeHash160, version: chainConfig.pubKeyHashPrefix);
   }
 
   Uint8List _sha256(Uint8List data) {
@@ -98,8 +157,31 @@ class AddressService {
     }
 
     final prefixZeros = data.takeWhile((b) => b == 0).length;
-    final encoded = '1' * prefixZeros + result.reversed.map((i) => alphabet[i]).join();
-    return encoded;
+    return '1' * prefixZeros + result.reversed.map((i) => alphabet[i]).join();
+  }
+
+  List<int> base58Decode(String input) {
+    const alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    final result = <int>[];
+    int leadingOnes = 0;
+
+    for (int i = 0; i < input.length; i++) {
+      if (input[i] != '1') break;
+      leadingOnes++;
+    }
+
+    for (int i = 0; i < input.length; i++) {
+      int carry = 0;
+      for (int j = i; j < input.length; j++) {
+        final digitValue = alphabet.indexOf(input[j]);
+        if (digitValue == -1) throw Exception('Invalid character: ${input[j]}');
+        carry = carry * 58 + digitValue;
+      }
+      result.add(carry ~/ 256);
+      carry = carry % 256;
+    }
+
+    return [List.filled(leadingOnes, 0), ...result].expand((x) => x).toList();
   }
 
   bool validateAddress(String address) {
@@ -135,14 +217,29 @@ class AddressService {
 
   String getAddressFromPrivateKey(String privateKeyHex, {bool isTestnet = false}) {
     final privateKeyBytes = HEX.decode(privateKeyHex);
-    final ecPoint = _publicKeyFromPrivateKey(privateKeyBytes);
-    return _deriveAddress(ecPoint, isTestnet: isTestnet);
+    final publicKey = _publicKeyFromPrivateKey(privateKeyBytes);
+    final chainCfg = isTestnet ? ChainConfig.testnet : ChainConfig.mainnet;
+    return _deriveAddress(publicKey, chainConfig: chainCfg);
   }
 
   Uint8List _publicKeyFromPrivateKey(List<int> privateKeyBytes) {
     final domain = ECCurve_secp256k1();
     final point = domain.G * BigInt.parse(HEX.encode(privateKeyBytes), radix: 16);
     return Uint8List.fromList(point!.getEncoded(false));
+  }
+
+  bool isValidWif(String wif) {
+    try {
+      _decodeWif(wif, isTestnet: false);
+      return true;
+    } catch (_) {
+      try {
+        _decodeWif(wif, isTestnet: true);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
   }
 }
 
@@ -153,6 +250,7 @@ class WalletData {
   final String publicKey;
   final String receivingAddress;
   final int network;
+  final String walletType;
 
   const WalletData({
     required this.mnemonic,
@@ -161,6 +259,7 @@ class WalletData {
     required this.publicKey,
     required this.receivingAddress,
     required this.network,
+    this.walletType = 'mnemonic',
   });
 
   Map<String, dynamic> toJson() => {
@@ -170,5 +269,18 @@ class WalletData {
     'publicKey': publicKey,
     'receivingAddress': receivingAddress,
     'network': network,
+    'walletType': walletType,
   };
+
+  factory WalletData.fromJson(Map<String, dynamic> json) {
+    return WalletData(
+      mnemonic: json['mnemonic'] as String? ?? '',
+      seed: json['seed'] as String? ?? '',
+      privateKey: json['privateKey'] as String,
+      publicKey: json['publicKey'] as String,
+      receivingAddress: json['receivingAddress'] as String,
+      network: json['network'] as int,
+      walletType: json['walletType'] as String? ?? 'mnemonic',
+    );
+  }
 }

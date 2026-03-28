@@ -118,6 +118,45 @@ abstract class S {
   String get pleaseEnterValidAmount;
   String get custom;
   String get donationFee;
+  String get pleaseConfirmBackup;
+  String get importantSaveMnemonic;
+  String get mnemonicDescription;
+  String get yourMnemonicPhrase;
+  String get tapToReveal;
+  String get copyToClipboard;
+  String get mnemonicCopied;
+  String get iUnderstandContinue;
+  String get sendSkydoge;
+  String get scanQrToReceive;
+  String get yourAddress;
+  String get onlySendSkydoge;
+  String get share;
+  String get confirmSend;
+  String get continueBtn;
+  String get transactionFee;
+  String get includeDonation;
+  String get donationAmount;
+  String get lowFee;
+  String get mediumFee;
+  String get highFee;
+  String get customFee;
+  String get customNode;
+  String get defaultNode;
+  String get resetToDefault;
+  String get customNodeConfig;
+  String get host;
+  String get port;
+  String get rpcUsername;
+  String get rpcPassword;
+  String get pleaseFillAllFields;
+  String get customNodeSaved;
+  String get blockExplorer;
+  String get openBlockExplorer;
+  String get viewTransaction;
+  String get switchNetwork;
+  String get switchNetworkConfirm;
+  String get switchToMainnet;
+  String get switchToTestnet;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {
@@ -330,6 +369,84 @@ class SEn extends S {
   String get custom => 'Custom';
   @override
   String get donationFee => 'Donation Fee';
+  @override
+  String get pleaseConfirmBackup => 'Please confirm that you have backed up your mnemonic phrase';
+  @override
+  String get importantSaveMnemonic => 'Important: Save Your Mnemonic';
+  @override
+  String get mnemonicDescription => 'Write down these 12 words in order and store them safely. This is the only way to recover your wallet if you lose access to your device.';
+  @override
+  String get yourMnemonicPhrase => 'Your Mnemonic Phrase';
+  @override
+  String get tapToReveal => 'Tap the eye icon to reveal';
+  @override
+  String get copyToClipboard => 'Copy to Clipboard';
+  @override
+  String get mnemonicCopied => 'Mnemonic copied to clipboard';
+  @override
+  String get iUnderstandContinue => 'I Understand, Continue';
+  @override
+  String get sendSkydoge => 'Send SKYDOGE';
+  @override
+  String get scanQrToReceive => 'Scan QR code to receive SKYDOGE';
+  @override
+  String get yourAddress => 'Your Address';
+  @override
+  String get onlySendSkydoge => 'Only send SKYDOGE to this address. Sending other assets may result in permanent loss.';
+  @override
+  String get share => 'Share';
+  @override
+  String get confirmSend => 'Confirm & Send';
+  @override
+  String get continueBtn => 'Continue';
+  @override
+  String get transactionFee => 'Transaction Fee';
+  @override
+  String get includeDonation => 'Include 0.1% Donation';
+  @override
+  String get donationAmount => 'Donation Amount:';
+  @override
+  String get lowFee => 'Low Fee';
+  @override
+  String get mediumFee => 'Medium Fee';
+  @override
+  String get highFee => 'High Fee';
+  @override
+  String get customFee => 'Custom Fee';
+  @override
+  String get customNode => 'Custom Node';
+  @override
+  String get defaultNode => 'Default Node';
+  @override
+  String get resetToDefault => 'Reset to Default';
+  @override
+  String get customNodeConfig => 'Custom Node Configuration';
+  @override
+  String get host => 'Host';
+  @override
+  String get port => 'Port';
+  @override
+  String get rpcUsername => 'RPC Username';
+  @override
+  String get rpcPassword => 'RPC Password';
+  @override
+  String get pleaseFillAllFields => 'Please fill in all fields';
+  @override
+  String get customNodeSaved => 'Custom node saved. Restart app to apply.';
+  @override
+  String get blockExplorer => 'Block Explorer';
+  @override
+  String get openBlockExplorer => 'Open Block Explorer';
+  @override
+  String get viewTransaction => 'View Transaction';
+  @override
+  String get switchNetwork => 'Switch Network';
+  @override
+  String get switchNetworkConfirm => 'Are you sure you want to switch networks? This will clear cached data.';
+  @override
+  String get switchToMainnet => 'Switch to Mainnet';
+  @override
+  String get switchToTestnet => 'Switch to Testnet';
 }
 
 class SZh extends S {
@@ -517,4 +634,82 @@ class SZh extends S {
   String get custom => '自定义';
   @override
   String get donationFee => '捐赠手续费';
+  @override
+  String get pleaseConfirmBackup => '请确认您已备份助记词';
+  @override
+  String get importantSaveMnemonic => '重要提示：请保存您的助记词';
+  @override
+  String get mnemonicDescription => '请按顺序写下这12个单词并妥善保管。这是您恢复钱包的唯一方式。';
+  @override
+  String get yourMnemonicPhrase => '您的助记词';
+  @override
+  String get tapToReveal => '点击眼睛图标显示';
+  @override
+  String get copyToClipboard => '复制到剪贴板';
+  @override
+  String get mnemonicCopied => '助记词已复制到剪贴板';
+  @override
+  String get iUnderstandContinue => '我已知晓，继续';
+  @override
+  String get sendSkydoge => '发送 SKYDOGE';
+  @override
+  String get scanQrToReceive => '扫描二维码收款';
+  @override
+  String get yourAddress => '您的地址';
+  @override
+  String get onlySendSkydoge => '请只向此地址发送SKYDOGE。发送其他资产可能导致永久丢失。';
+  @override
+  String get share => '分享';
+  @override
+  String get confirmSend => '确认并发送';
+  @override
+  String get continueBtn => '继续';
+  @override
+  String get transactionFee => '交易手续费';
+  @override
+  String get includeDonation => '包含0.1%捐赠';
+  @override
+  String get donationAmount => '捐赠金额：';
+  @override
+  String get lowFee => '低手续费';
+  @override
+  String get mediumFee => '中手续费';
+  @override
+  String get highFee => '高手续费';
+  @override
+  String get customFee => '自定义手续费';
+  @override
+  String get customNode => '自定义节点';
+  @override
+  String get defaultNode => '默认节点';
+  @override
+  String get resetToDefault => '恢复默认';
+  @override
+  String get customNodeConfig => '自定义节点配置';
+  @override
+  String get host => '主机';
+  @override
+  String get port => '端口';
+  @override
+  String get rpcUsername => 'RPC用户名';
+  @override
+  String get rpcPassword => 'RPC密码';
+  @override
+  String get pleaseFillAllFields => '请填写所有字段';
+  @override
+  String get customNodeSaved => '自定义节点已保存。重启应用以生效。';
+  @override
+  String get blockExplorer => '区块浏览器';
+  @override
+  String get openBlockExplorer => '打开区块浏览器';
+  @override
+  String get viewTransaction => '查看交易';
+  @override
+  String get switchNetwork => '切换网络';
+  @override
+  String get switchNetworkConfirm => '您确定要切换网络吗？这将清除缓存数据。';
+  @override
+  String get switchToMainnet => '切换到主网';
+  @override
+  String get switchToTestnet => '切换到测试网';
 }
