@@ -1,10 +1,11 @@
 name: skydoge_wallet
 description: Skydoge Mobile Wallet - A cryptocurrency wallet for SKYDOGE tokens
 publish_to: 'none'
-version: 1.0.7
+version: 1.1.3
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
+  flutter: '3.24.0'
 
 dependencies:
   flutter:

@@ -16,25 +16,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Backup pubspec
-        run: |
-          cp pubspec.yaml pubspec.yaml.bak
-          ls -la
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
-
-      - name: Restore pubspec
-        run: |
-          cp pubspec.yaml.bak pubspec.yaml
-          cat pubspec.yaml
+          flutter-version-file: pubspec.yaml
 
       - name: Get dependencies
-        run: |
-          flutter pub get
-          ls -la
+        run: flutter pub get
 
       - name: Build debug APK
         run: flutter build apk --debug
@@ -54,18 +42,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Backup pubspec
-        run: |
-          cp pubspec.yaml pubspec.yaml.bak
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
-
-      - name: Restore pubspec
-        run: |
-          cp pubspec.yaml.bak pubspec.yaml
+          flutter-version-file: pubspec.yaml
 
       - name: Get dependencies
         run: flutter pub get
