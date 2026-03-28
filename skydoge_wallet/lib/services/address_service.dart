@@ -4,26 +4,17 @@ import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip32/bip32.dart' as bip32;
 import 'package:pointycastle/export.dart';
 import 'package:hex/hex.dart';
-import '../constants/donation_constants.dart';
 
 class AddressService {
-  static const String _mnemonicWordList = 'wordlist/english.txt';
-  static const int _hardenedOffset = 0x80000000;
-
   Future<String> generateMnemonic() async {
-    final random = Random.secure();
-    final mnemonic = bip39.generateMnemonic(
-      strength: 128,
-      random: random,
-    );
-    return mnemonic;
+    return bip39.generateMnemonic();
   }
 
   Future<WalletData> deriveWallet(String mnemonic, {bool isTestnet = false}) async {
     final seed = bip39.mnemonicToSeed(mnemonic);
     final root = bip32.BIP32.fromSeed(seed);
 
-    final child = root.forPath("m/44'/0'/0'/0/0");
+    final child = root.derivePath("m/44'/0'/0'/0/0");
     final privateKey = child.privateKey!;
     final publicKey = child.publicKey;
 

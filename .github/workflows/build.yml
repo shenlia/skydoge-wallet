@@ -32,22 +32,22 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
 
-      - name: Backup existing files
-        run: |
-          mkdir -p backup
-          cp -r ${{ env.PROJECT_DIR }}/lib backup/ 2>/dev/null || true
-          cp ${{ env.PROJECT_DIR }}/pubspec.yaml backup/ 2>/dev/null || true
-
       - name: Create Flutter project
         run: |
-          rm -rf ${{ env.PROJECT_DIR }}
           flutter create --org com.skydoge --project-name skydoge_wallet --platforms android,ios ${{ env.PROJECT_DIR }}
 
-      - name: Restore source files
+      - name: Copy source files
         run: |
-          cp -r backup/lib/* ${{ env.PROJECT_DIR }}/lib/ 2>/dev/null || true
-          cp backup/pubspec.yaml ${{ env.PROJECT_DIR }}/ 2>/dev/null || true
-          rm -rf backup
+          cp -r ${{ env.PROJECT_DIR }}/lib ${{ env.PROJECT_DIR }}/lib.bak 2>/dev/null || true
+          rm -rf ${{ env.PROJECT_DIR }}/lib 2>/dev/null || true
+          cp -r lib ${{ env.PROJECT_DIR }}/ 2>/dev/null || true
+          cp pubspec.yaml ${{ env.PROJECT_DIR }}/ 2>/dev/null || true
+
+      - name: Update Android SDK
+        run: |
+          if [ -f "${{ env.PROJECT_DIR }}/android/app/build.gradle" ]; then
+            sed -i 's/compileSdk = 34/compileSdk = 35/' ${{ env.PROJECT_DIR }}/android/app/build.gradle
+          fi
 
       - name: Get dependencies
         run: |
