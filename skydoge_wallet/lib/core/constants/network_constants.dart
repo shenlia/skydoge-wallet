@@ -9,6 +9,9 @@ class NetworkConstants {
   static const String testnetRpcUser = 'testnet';
   static const String testnetRpcPassword = 'testnet_password';
 
+  static const String mainnetExplorerApi = 'http://explorer.skydoge.net';
+  static const String testnetExplorerApi = 'http://testnet.explorer.skydoge.net';
+
   static const int mainnetMagic = 0xD9B4BEF9;
   static const int testnetMagic = 0x0709110B;
 
