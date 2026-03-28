@@ -7,7 +7,7 @@
 | 仓库地址 | https://github.com/shenlia/skydoge-wallet |
 | 主网仓库 | https://github.com/skydogenet |
 | 官网 | https://skydoge.net |
-| 当前版本 | v1.0.0 |
+| 当前版本 | v1.0.1 |
 | 包名 | com.skydoge.skydoge_wallet |
 
 ## 已完成的修改
@@ -48,6 +48,47 @@
 
 ### 4. 删除旧文件
 - 删除 `skydoge-wallet/skydoge_message_board.md` 占位符
+
+### 5. Android 9+ 兼容性修复 (v1.0.1)
+
+**问题**: APK在Android 9+系统上打开一直转圈，无法连接RPC
+
+**原因**:
+- Android 9+ 默认禁止明文HTTP流量
+- 缺少网络权限声明
+
+**文件**: `skydoge_wallet/android/app/src/main/AndroidManifest.xml`
+```diff
++ <uses-permission android:name="android.permission.INTERNET"/>
++ <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
++ <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
++ android:usesCleartextTraffic="true"
++ android:networkSecurityConfig="@xml/network_security_config"
+```
+
+**文件**: `skydoge_wallet/android/app/src/main/res/xml/network_security_config.xml` (新建)
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">pool.skydoge.net</domain>
+        <domain includeSubdomains="true">testnet.skydoge.net</domain>
+        <domain includeSubdomains="true">explorer.skydoge.net</domain>
+        <domain includeSubdomains="true">testnet.explorer.skydoge.net</domain>
+    </domain-config>
+</network-security-config>
+```
+
+**文件**: `skydoge_wallet/android/app/build.gradle`
+```diff
+- minSdk = flutter.minSdkVersion
++ minSdk = 23
+```
 
 ## 核心功能
 
@@ -128,7 +169,7 @@ sdkmanager "platforms;android-35"
 
 ### 3. SDK版本
 - `compileSdk` 建议使用 34
-- `minSdk` 使用 Flutter默认值
+- `minSdk` 设置为 23 (Android 6.0) 以兼容Android 9+
 - `targetSdk` 使用 Flutter默认值
 
 ### 4. GitHub Token
@@ -150,3 +191,4 @@ sdkmanager "platforms;android-35"
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0.0 | 2026-03-28 | 初始版本，支持自定义RPC和捐赠功能 |
+| v1.0.1 | 2026-03-28 | 修复Android 9+兼容性问题，添加网络权限和cleartextTraffic配置 |
