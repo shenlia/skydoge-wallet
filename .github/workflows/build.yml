@@ -24,8 +24,6 @@ jobs:
         id: commit
         run: |
           echo "short_sha=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_OUTPUT
-          pwd
-          ls -la
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -35,21 +33,14 @@ jobs:
 
       - name: Create Flutter project
         run: |
-          pwd
-          ls -la
-          rm -rf skydoge_wallet
+          mv skydoge_wallet skydoge_wallet_source
           flutter create --org com.skydoge --project-name skydoge_wallet --platforms android,ios skydoge_wallet
 
       - name: Copy source files
         run: |
-          pwd
-          ls -la
-          ls -la skydoge_wallet/
           rm -rf skydoge_wallet/lib
-          cp -r skydoge_wallet/lib skydoge_wallet/lib.bak 2>/dev/null || true
-          rm -rf skydoge_wallet/lib
-          cp -r lib skydoge_wallet/
-          cp pubspec.yaml skydoge_wallet/
+          cp -r skydoge_wallet_source/lib skydoge_wallet/
+          cp skydoge_wallet_source/pubspec.yaml skydoge_wallet/
 
       - name: Update Android SDK
         run: |
