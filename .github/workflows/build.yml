@@ -34,14 +34,14 @@ jobs:
 
       - name: Create Flutter project
         run: |
+          rm -rf ${{ env.PROJECT_DIR }}
           flutter create --org com.skydoge --project-name skydoge_wallet --platforms android,ios ${{ env.PROJECT_DIR }}
 
       - name: Copy source files
         run: |
-          cp -r ${{ env.PROJECT_DIR }}/lib ${{ env.PROJECT_DIR }}/lib.bak 2>/dev/null || true
-          rm -rf ${{ env.PROJECT_DIR }}/lib 2>/dev/null || true
-          cp -r lib ${{ env.PROJECT_DIR }}/ 2>/dev/null || true
-          cp pubspec.yaml ${{ env.PROJECT_DIR }}/ 2>/dev/null || true
+          rm -rf ${{ env.PROJECT_DIR }}/lib
+          cp -r lib ${{ env.PROJECT_DIR }}/
+          cp pubspec.yaml ${{ env.PROJECT_DIR }}/
 
       - name: Update Android SDK
         run: |
