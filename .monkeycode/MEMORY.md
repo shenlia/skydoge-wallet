@@ -60,3 +60,43 @@ gh release upload v{x.x.x} build/app/outputs/flutter-apk/app-debug.apk --repo sh
 ## GitHub Token
 
 如有需要请用户提供有效的Personal Access Token，需要 `repo` 权限。
+
+---
+
+## 更新需求备注
+
+当您有新的更新需求时，请在下方填写：
+
+### 当前待处理 / 计划中的更新
+
+```
+[日期]
+待更新内容：
+- 
+
+期望版本号：v
+```
+
+### 历史更新记录
+
+| 日期 | 版本 | 更新内容 |
+|------|------|----------|
+| 2026-03-28 | v1.0.0 | 初始版本，支持自定义RPC、捐赠功能(0.1%)、Drivechain侧链 |
+
+---
+
+## 示例：如何备注更新需求
+
+如果您想更新捐赠费率，告诉我：
+
+```
+更新 Skydoge Wallet：
+- 修改捐赠费率从 0.1% 改为 0.01%
+- 期望版本：v1.1.0
+```
+
+我会自动：
+1. 修改 `lib/core/constants/donation_constants.dart` 中的 `donationRate`
+2. 更新版本号
+3. 构建APK
+4. 发布新版本
