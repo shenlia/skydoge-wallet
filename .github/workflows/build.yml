@@ -11,7 +11,6 @@ on:
 
 env:
   FLUTTER_VERSION: '3.24.0'
-  PROJECT_DIR: skydoge_wallet
 
 jobs:
   build:
@@ -20,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          path: skydoge-wallet
 
       - name: Get commit info
         id: commit
@@ -34,41 +35,48 @@ jobs:
 
       - name: Create Flutter project
         run: |
-          rm -rf ${{ env.PROJECT_DIR }}
-          flutter create --org com.skydoge --project-name skydoge_wallet --platforms android,ios ${{ env.PROJECT_DIR }}
+          cd skydoge-wallet
+          rm -rf skydoge_wallet
+          flutter create --org com.skydoge --project-name skydoge_wallet --platforms android,ios skydoge_wallet
 
       - name: Copy source files
         run: |
-          rm -rf ${{ env.PROJECT_DIR }}/lib
-          cp -r lib ${{ env.PROJECT_DIR }}/
-          cp pubspec.yaml ${{ env.PROJECT_DIR }}/
+          cd skydoge-wallet
+          rm -rf skydoge_wallet/lib
+          cp -r skydoge_wallet/lib skydoge_wallet/lib.bak 2>/dev/null || true
+          rm -rf skydoge_wallet/lib
+          cp -r lib skydoge_wallet/
+          cp skydoge_wallet/pubspec.yaml skydoge_wallet/pubspec.yaml.bak 2>/dev/null || true
+          rm skydoge_wallet/pubspec.yaml
+          cp pubspec.yaml skydoge_wallet/
 
       - name: Update Android SDK
         run: |
-          if [ -f "${{ env.PROJECT_DIR }}/android/app/build.gradle" ]; then
-            sed -i 's/compileSdk = 34/compileSdk = 35/' ${{ env.PROJECT_DIR }}/android/app/build.gradle
+          cd skydoge-wallet/skydoge_wallet
+          if [ -f "android/app/build.gradle" ]; then
+            sed -i 's/compileSdk = 34/compileSdk = 35/' android/app/build.gradle
           fi
 
       - name: Get dependencies
         run: |
-          cd ${{ env.PROJECT_DIR }}
+          cd skydoge-wallet/skydoge_wallet
           flutter pub get
 
       - name: Build debug APK
         run: |
-          cd ${{ env.PROJECT_DIR }}
+          cd skydoge-wallet/skydoge_wallet
           flutter build apk --debug
 
       - name: Build release APK
         run: |
-          cd ${{ env.PROJECT_DIR }}
+          cd skydoge-wallet/skydoge_wallet
           flutter build apk --release
 
       - name: Prepare artifacts
         run: |
           mkdir -p artifacts
-          cp ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-debug.apk artifacts/
-          cp ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk artifacts/
+          cp skydoge-wallet/skydoge_wallet/build/app/outputs/flutter-apk/app-debug.apk artifacts/
+          cp skydoge-wallet/skydoge_wallet/build/app/outputs/flutter-apk/app-release.apk artifacts/
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
