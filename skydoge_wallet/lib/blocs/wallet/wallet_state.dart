@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../../data/models/wallet.dart';
+import '../../../data/models/transaction.dart' as models;
 
 abstract class WalletState extends Equatable {
   const WalletState();
@@ -36,7 +37,7 @@ class WalletCreated extends WalletState {
 class WalletLoaded extends WalletState {
   final Wallet wallet;
   final WalletBalance balance;
-  final List<Transaction> transactions;
+  final List<models.Transaction> transactions;
   final bool isTestnet;
 
   const WalletLoaded({
@@ -88,20 +89,4 @@ class WalletError extends WalletState {
 
   @override
   List<Object?> get props => [message];
-}
-
-class Transaction {
-  final String txid;
-  final int amount;
-  final DateTime timestamp;
-  final int confirmations;
-  final bool isIncoming;
-
-  const Transaction({
-    required this.txid,
-    required this.amount,
-    required this.timestamp,
-    required this.confirmations,
-    required this.isIncoming,
-  });
 }
