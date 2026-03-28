@@ -170,7 +170,7 @@ class TransactionTile extends StatelessWidget {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'This transaction includes a 0.1% donation to support Skydoge development',
+                        'This transaction includes a 0.01% donation to support Skydoge development',
                         style: TextStyle(
                           color: AppTheme.accentColor,
                           fontSize: 12,

@@ -18,19 +18,17 @@ class TransactionBuilding extends TransactionState {
 
 class TransactionBuilt extends TransactionState {
   final UnsignedTransaction transaction;
-  final int donationFee;
-  final String toAddress;
-  final int amount;
+  final TxPreview preview;
+  final SignatureArtifact? localSignature;
 
   const TransactionBuilt({
     required this.transaction,
-    required this.donationFee,
-    required this.toAddress,
-    required this.amount,
+    required this.preview,
+    this.localSignature,
   });
 
   @override
-  List<Object?> get props => [transaction, donationFee, toAddress, amount];
+  List<Object?> get props => [transaction, preview, localSignature];
 }
 
 class TransactionSigning extends TransactionState {
@@ -70,13 +68,4 @@ class TransactionFeeRateSet extends TransactionState {
 
   @override
   List<Object?> get props => [feeLevel, feeRate];
-}
-
-class TransactionDonationSet extends TransactionState {
-  final bool enabled;
-
-  const TransactionDonationSet({required this.enabled});
-
-  @override
-  List<Object?> get props => [enabled];
 }

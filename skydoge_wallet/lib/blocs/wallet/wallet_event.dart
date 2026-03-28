@@ -30,6 +30,19 @@ class RecoverWalletEvent extends WalletEvent {
   List<Object?> get props => [mnemonic, isTestnet];
 }
 
+class ImportWifWalletEvent extends WalletEvent {
+  final String wif;
+  final bool isTestnet;
+
+  const ImportWifWalletEvent({
+    required this.wif,
+    this.isTestnet = false,
+  });
+
+  @override
+  List<Object?> get props => [wif, isTestnet];
+}
+
 class UnlockWalletEvent extends WalletEvent {
   final String pin;
 

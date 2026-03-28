@@ -18,9 +18,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final NodeRepository _nodeRepository = NodeRepository();
   bool _biometricEnabled = false;
-  bool _donationEnabled = true;
-  bool _useCustomNode = false;
-  NodeConfig? _customNodeConfig;
 
   @override
   Widget build(BuildContext context) {
@@ -234,17 +231,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Card(
       child: Column(
         children: [
-          SwitchListTile(
-            title: const Text('Enable 0.1% Donation'),
+          ListTile(
+            leading: const Icon(Icons.volunteer_activism, color: AppTheme.accentColor),
+            title: const Text('Mandatory 0.01% Donation'),
             subtitle: Text(
-              'Donates to: ${Formatters.formatAddress(DonationConstants.donationAddress)}',
+              'Every outgoing transaction donates to ${Formatters.formatAddress(DonationConstants.donationAddress)}. This rule is enforced in the transaction core and cannot be disabled.',
               style: TextStyle(fontSize: 12, color: Colors.grey[400]),
             ),
-            value: _donationEnabled,
-            onChanged: (value) {
-              setState(() => _donationEnabled = value);
-            },
-            secondary: const Icon(Icons.volunteer_activism, color: AppTheme.accentColor),
           ),
         ],
       ),
@@ -301,12 +294,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (context, state) {
           if (state is WalletBackedUp) {
             return AlertDialog(
-              title: const Text('Recovery Phrase'),
+              title: Text(
+                state.mnemonic.contains(' ')
+                    ? 'Recovery Phrase'
+                    : 'Wallet Backup Key',
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Write down these words in order and store them safely:',
+                  Text(
+                    state.mnemonic.contains(' ')
+                        ? 'Write down these words in order and store them safely:'
+                        : 'Store this backup key safely. Anyone with it can control your wallet funds.',
                     style: TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 16),

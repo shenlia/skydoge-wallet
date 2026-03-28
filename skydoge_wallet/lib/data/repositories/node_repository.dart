@@ -1,4 +1,6 @@
 import 'dart:convert';
+
+import '../../core/chain/chain_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NodeRepository {
@@ -78,7 +80,16 @@ class NodeConfig {
   String get rpcUrl => 'http://$host:$port';
   String get authHeader {
     final bytes = '$user:$password'.codeUnits;
-    return base64Encode(bytes);
+    return 'Basic ${base64Encode(bytes)}';
+  }
+
+  ChainConfig applyToChain(ChainConfig baseChain) {
+    return baseChain.copyWith(
+      rpcHost: host,
+      rpcPort: port,
+      rpcUser: user,
+      rpcPassword: password,
+    );
   }
 
   factory NodeConfig.fromJson(Map<String, dynamic> json) {

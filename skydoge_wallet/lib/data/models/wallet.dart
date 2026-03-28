@@ -5,8 +5,11 @@ class Wallet extends Equatable {
   final String seed;
   final String privateKey;
   final String publicKey;
+  final String wif;
   final String receivingAddress;
   final int network;
+  final String walletType;
+  final String derivationPath;
   final DateTime createdAt;
 
   const Wallet({
@@ -14,8 +17,11 @@ class Wallet extends Equatable {
     required this.seed,
     required this.privateKey,
     required this.publicKey,
+    required this.wif,
     required this.receivingAddress,
     required this.network,
+    required this.walletType,
+    required this.derivationPath,
     required this.createdAt,
   });
 
@@ -27,8 +33,11 @@ class Wallet extends Equatable {
     String? seed,
     String? privateKey,
     String? publicKey,
+    String? wif,
     String? receivingAddress,
     int? network,
+    String? walletType,
+    String? derivationPath,
     DateTime? createdAt,
   }) {
     return Wallet(
@@ -36,8 +45,11 @@ class Wallet extends Equatable {
       seed: seed ?? this.seed,
       privateKey: privateKey ?? this.privateKey,
       publicKey: publicKey ?? this.publicKey,
+      wif: wif ?? this.wif,
       receivingAddress: receivingAddress ?? this.receivingAddress,
       network: network ?? this.network,
+      walletType: walletType ?? this.walletType,
+      derivationPath: derivationPath ?? this.derivationPath,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -48,8 +60,11 @@ class Wallet extends Equatable {
       'seed': seed,
       'privateKey': privateKey,
       'publicKey': publicKey,
+      'wif': wif,
       'receivingAddress': receivingAddress,
       'network': network,
+      'walletType': walletType,
+      'derivationPath': derivationPath,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -60,14 +75,28 @@ class Wallet extends Equatable {
       seed: json['seed'] as String,
       privateKey: json['privateKey'] as String,
       publicKey: json['publicKey'] as String,
+      wif: json['wif'] as String? ?? '',
       receivingAddress: json['receivingAddress'] as String,
       network: json['network'] as int,
+      walletType: json['walletType'] as String? ?? 'mnemonic',
+      derivationPath: json['derivationPath'] as String? ?? "m/44'/0'/0'/0/0",
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
 
   @override
-  List<Object?> get props => [mnemonic, seed, privateKey, publicKey, receivingAddress, network, createdAt];
+  List<Object?> get props => [
+        mnemonic,
+        seed,
+        privateKey,
+        publicKey,
+        wif,
+        receivingAddress,
+        network,
+        walletType,
+        derivationPath,
+        createdAt,
+      ];
 }
 
 class WalletBalance extends Equatable {

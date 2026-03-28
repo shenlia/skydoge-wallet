@@ -1,71 +1,51 @@
+import '../chain/chain_config.dart';
+
 class NetworkConstants {
-  static const String mainnetRpcHost = 'pool.skydoge.net';
-  static const int mainnetRpcPort = 8332;
-  static const String mainnetRpcUser = 'skydoge';
-  static const String mainnetRpcPassword = 'your_rpc_password';
-
-  static const String testnetRpcHost = 'testnet.skydoge.net';
-  static const int testnetRpcPort = 18332;
-  static const String testnetRpcUser = 'testnet';
-  static const String testnetRpcPassword = 'testnet_password';
-
-  static const String mainnetExplorerApi = 'http://explorer.skydoge.net';
-  static const String testnetExplorerApi = 'http://testnet.explorer.skydoge.net';
-
-  static const int mainnetMagic = 0xD9B4BEF9;
-  static const int testnetMagic = 0x0709110B;
-
+  static const Duration rpcTimeout = Duration(seconds: 30);
+  static const Duration connectionTimeout = Duration(seconds: 10);
   static const int coin = 100000000;
   static const int maxFee = 100000000;
 
-  static const Duration rpcTimeout = Duration(seconds: 30);
-  static const Duration connectionTimeout = Duration(seconds: 10);
+  static ChainConfig chainFor(bool isTestnet) {
+    return isTestnet ? ChainConfig.testnet : ChainConfig.mainnet;
+  }
 }
 
 class NetworkConfig {
-  final String host;
-  final int port;
-  final String user;
-  final String password;
-  final bool isTestnet;
+  final ChainConfig chain;
 
-  const NetworkConfig({
-    required this.host,
-    required this.port,
-    required this.user,
-    required this.password,
-    required this.isTestnet,
-  });
+  const NetworkConfig({required this.chain});
 
   factory NetworkConfig.mainnet() {
-    return const NetworkConfig(
-      host: NetworkConstants.mainnetRpcHost,
-      port: NetworkConstants.mainnetRpcPort,
-      user: NetworkConstants.mainnetRpcUser,
-      password: NetworkConstants.mainnetRpcPassword,
-      isTestnet: false,
-    );
+    return const NetworkConfig(chain: ChainConfig.mainnet);
   }
 
   factory NetworkConfig.testnet() {
-    return const NetworkConfig(
-      host: NetworkConstants.testnetRpcHost,
-      port: NetworkConstants.testnetRpcPort,
-      user: NetworkConstants.testnetRpcUser,
-      password: NetworkConstants.testnetRpcPassword,
-      isTestnet: true,
+    return const NetworkConfig(chain: ChainConfig.testnet);
+  }
+
+  factory NetworkConfig.custom({
+    required ChainConfig baseChain,
+    required String host,
+    required int port,
+    required String user,
+    required String password,
+  }) {
+    return NetworkConfig(
+      chain: baseChain.copyWith(
+        rpcHost: host,
+        rpcPort: port,
+        rpcUser: user,
+        rpcPassword: password,
+      ),
     );
   }
 
-  String get rpcUrl => 'http://$host:$port';
-  String get authHeader => 'Basic ${_encodeAuth(user, password)}';
-
-  String _encodeAuth(String user, String password) {
-    final bytes = '$user:$password'.codeUnits;
-    return hexEncode(bytes);
-  }
-
-  String hexEncode(List<int> bytes) {
-    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-  }
+  bool get isTestnet => chain.isTestnet;
+  String get rpcUrl => chain.rpcUrl;
+  String get authHeader => chain.authorizationHeader;
+  String get host => chain.rpcHost;
+  int get port => chain.rpcPort;
+  String get user => chain.rpcUser;
+  String get password => chain.rpcPassword;
 }

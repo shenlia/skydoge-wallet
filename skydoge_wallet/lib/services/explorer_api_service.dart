@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/constants/network_constants.dart';
+import '../core/chain/chain_config.dart';
 
 class ExplorerApiService {
   final String baseUrl;
@@ -12,11 +13,11 @@ class ExplorerApiService {
   }) : _client = client ?? http.Client();
 
   factory ExplorerApiService.mainnet() {
-    return ExplorerApiService(baseUrl: NetworkConstants.mainnetExplorerApi);
+    return ExplorerApiService(baseUrl: ChainConfig.mainnet.explorerApi);
   }
 
   factory ExplorerApiService.testnet() {
-    return ExplorerApiService(baseUrl: NetworkConstants.testnetExplorerApi);
+    return ExplorerApiService(baseUrl: ChainConfig.testnet.explorerApi);
   }
 
   Future<int> getBalance(String address) async {

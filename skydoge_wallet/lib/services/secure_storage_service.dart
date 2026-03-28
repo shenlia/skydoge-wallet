@@ -72,19 +72,34 @@ class SecureStorageService {
   }
 
   String _encrypt(String plaintext) {
-    final bytes = utf8.encode(plaintext);
-    final encoded = base64Encode(bytes);
-    return encoded;
+    final payload = utf8.encode(plaintext);
+    final secret = utf8.encode(_deriveStorageSecret());
+    final encrypted = List<int>.generate(
+      payload.length,
+      (index) => payload[index] ^ secret[index % secret.length],
+    );
+    return base64Encode(encrypted);
   }
 
   String _decrypt(String ciphertext) {
-    final bytes = base64Decode(ciphertext);
-    return utf8.decode(bytes);
+    final encrypted = base64Decode(ciphertext);
+    final secret = utf8.encode(_deriveStorageSecret());
+    final decrypted = List<int>.generate(
+      encrypted.length,
+      (index) => encrypted[index] ^ secret[index % secret.length],
+    );
+    return utf8.decode(decrypted);
   }
 
   String _hashPin(String pin) {
     final bytes = utf8.encode(pin);
     final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  String _deriveStorageSecret() {
+    const namespace = 'skydoge-wallet-secure-storage';
+    final digest = sha256.convert(utf8.encode(namespace));
     return digest.toString();
   }
 }

@@ -1,26 +1,32 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../core/constants/network_constants.dart';
 import '../../data/repositories/node_repository.dart';
 import '../../services/explorer_api_service.dart';
 import '../../services/rpc_service.dart';
-import '../../core/constants/network_constants.dart';
 
 abstract class NetworkEvent extends Equatable {
   const NetworkEvent();
+
   @override
   List<Object?> get props => [];
 }
 
 class InitNetworkEvent extends NetworkEvent {
   final bool isTestnet;
+
   const InitNetworkEvent({this.isTestnet = false});
+
   @override
   List<Object?> get props => [isTestnet];
 }
 
 class SwitchNetworkEvent extends NetworkEvent {
   final bool isTestnet;
+
   const SwitchNetworkEvent({required this.isTestnet});
+
   @override
   List<Object?> get props => [isTestnet];
 }
@@ -30,14 +36,18 @@ class ConnectNodeEvent extends NetworkEvent {
   final int port;
   final String user;
   final String password;
+  final bool isTestnet;
+
   const ConnectNodeEvent({
     required this.host,
     required this.port,
     required this.user,
     required this.password,
+    required this.isTestnet,
   });
+
   @override
-  List<Object?> get props => [host, port, user, password];
+  List<Object?> get props => [host, port, user, password, isTestnet];
 }
 
 class ResetToDefaultNodeEvent extends NetworkEvent {
@@ -46,6 +56,7 @@ class ResetToDefaultNodeEvent extends NetworkEvent {
 
 abstract class NetworkState extends Equatable {
   const NetworkState();
+
   @override
   List<Object?> get props => [];
 }
@@ -81,7 +92,9 @@ class NetworkReady extends NetworkState {
 
 class NetworkError extends NetworkState {
   final String message;
+
   const NetworkError({required this.message});
+
   @override
   List<Object?> get props => [message];
 }
@@ -96,105 +109,85 @@ class NetworkBloc extends Bloc<NetworkEvent, NetworkState> {
     on<ResetToDefaultNodeEvent>(_onReset);
   }
 
-  Future<void> _onInit(InitNetworkEvent event, Emitter<NetworkState> emit) async {
+  Future<void> _onInit(
+    InitNetworkEvent event,
+    Emitter<NetworkState> emit,
+  ) async {
     emit(const NetworkLoading());
 
     try {
-      final nodeRepository = NodeRepository();
-      final useCustom = await nodeRepository.isUsingCustomNode();
+      final useCustom = await _nodeRepository.isUsingCustomNode();
+      final baseConfig = event.isTestnet ? NetworkConfig.testnet() : NetworkConfig.mainnet();
 
-      String host;
-      int port;
-      String user;
-      String password;
-
+      late final NetworkConfig networkConfig;
       if (useCustom) {
-        final config = await nodeRepository.getCustomNodeConfig();
-        if (config != null) {
-          host = config.host;
-          port = config.port;
-          user = config.user;
-          password = config.password;
+        final custom = await _nodeRepository.getCustomNodeConfig();
+        if (custom != null) {
+          networkConfig = NetworkConfig.custom(
+            baseChain: baseConfig.chain,
+            host: custom.host,
+            port: custom.port,
+            user: custom.user,
+            password: custom.password,
+          );
         } else {
-          host = NetworkConstants.mainnetRpcHost;
-          port = NetworkConstants.mainnetRpcPort;
-          user = NetworkConstants.mainnetRpcUser;
-          password = NetworkConstants.mainnetRpcPassword;
+          networkConfig = baseConfig;
         }
       } else {
-        host = NetworkConstants.mainnetRpcHost;
-        port = NetworkConstants.mainnetRpcPort;
-        user = NetworkConstants.mainnetRpcUser;
-        password = NetworkConstants.mainnetRpcPassword;
+        networkConfig = baseConfig;
       }
 
-      final explorerApi = event.isTestnet
-          ? ExplorerApiService.testnet()
-          : ExplorerApiService.mainnet();
+      final explorerApi =
+          event.isTestnet ? ExplorerApiService.testnet() : ExplorerApiService.mainnet();
 
-      final networkConfig = NetworkConfig(
-        host: host,
-        port: port,
-        user: user,
-        password: password,
-        isTestnet: event.isTestnet,
+      emit(
+        NetworkReady(
+          isTestnet: event.isTestnet,
+          isUsingCustomNode: useCustom,
+          nodeHost: networkConfig.host,
+          nodePort: networkConfig.port,
+          explorerApi: explorerApi,
+          rpcService: RpcService(config: networkConfig),
+        ),
       );
-
-      final rpcService = RpcService(config: networkConfig);
-
-      emit(NetworkReady(
-        isTestnet: event.isTestnet,
-        isUsingCustomNode: useCustom,
-        nodeHost: host,
-        nodePort: port,
-        explorerApi: explorerApi,
-        rpcService: rpcService,
-      ));
-    } catch (e) {
-      emit(NetworkError(message: 'Failed to initialize network: $e'));
+    } catch (error) {
+      emit(NetworkError(message: 'Failed to initialize network: $error'));
     }
   }
 
-  Future<void> _onSwitch(SwitchNetworkEvent event, Emitter<NetworkState> emit) async {
+  Future<void> _onSwitch(
+    SwitchNetworkEvent event,
+    Emitter<NetworkState> emit,
+  ) async {
     add(InitNetworkEvent(isTestnet: event.isTestnet));
   }
 
-  Future<void> _onConnect(ConnectNodeEvent event, Emitter<NetworkState> emit) async {
+  Future<void> _onConnect(
+    ConnectNodeEvent event,
+    Emitter<NetworkState> emit,
+  ) async {
     emit(const NetworkLoading());
 
     try {
-      await _nodeRepository.saveCustomNodeConfig(NodeConfig(
-        host: event.host,
-        port: event.port,
-        user: event.user,
-        password: event.password,
-      ));
-
-      final explorerApi = ExplorerApiService.mainnet();
-      final networkConfig = NetworkConfig(
-        host: event.host,
-        port: event.port,
-        user: event.user,
-        password: event.password,
-        isTestnet: false,
+      await _nodeRepository.saveCustomNodeConfig(
+        NodeConfig(
+          host: event.host,
+          port: event.port,
+          user: event.user,
+          password: event.password,
+        ),
       );
 
-      final rpcService = RpcService(config: networkConfig);
-
-      emit(NetworkReady(
-        isTestnet: false,
-        isUsingCustomNode: true,
-        nodeHost: event.host,
-        nodePort: event.port,
-        explorerApi: explorerApi,
-        rpcService: rpcService,
-      ));
-    } catch (e) {
-      emit(NetworkError(message: 'Failed to connect: $e'));
+      add(InitNetworkEvent(isTestnet: event.isTestnet));
+    } catch (error) {
+      emit(NetworkError(message: 'Failed to connect: $error'));
     }
   }
 
-  Future<void> _onReset(ResetToDefaultNodeEvent event, Emitter<NetworkState> emit) async {
+  Future<void> _onReset(
+    ResetToDefaultNodeEvent event,
+    Emitter<NetworkState> emit,
+  ) async {
     await _nodeRepository.resetToDefault();
     add(const InitNetworkEvent());
   }

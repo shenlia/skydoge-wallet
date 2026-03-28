@@ -51,6 +51,15 @@ class WalletLoaded extends WalletState {
   List<Object?> get props => [wallet, balance, transactions, isTestnet];
 }
 
+class WalletImported extends WalletState {
+  final Wallet wallet;
+
+  const WalletImported({required this.wallet});
+
+  @override
+  List<Object?> get props => [wallet];
+}
+
 class WalletLocked extends WalletState {
   final bool hasPin;
 
