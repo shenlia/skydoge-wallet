@@ -2,17 +2,21 @@ import '../core/chain/chain_config.dart';
 import '../core/constants/donation_constants.dart';
 import '../data/models/transaction.dart';
 import 'address_service.dart';
+import 'local_signer_service.dart';
 import 'rpc_service.dart';
 
 class TransactionService {
   final RpcService _rpcService;
   final AddressService _addressService;
+  final LocalSignerService _localSignerService;
 
   TransactionService({
     required RpcService rpcService,
     required AddressService addressService,
+    LocalSignerService? localSignerService,
   })  : _rpcService = rpcService,
-        _addressService = addressService;
+        _addressService = addressService,
+        _localSignerService = localSignerService ?? LocalSignerService();
 
   Future<UnsignedTransaction> buildTransaction({
     required String toAddress,
@@ -124,12 +128,13 @@ class TransactionService {
     );
   }
 
-  Future<String> signAndBroadcast({
+  SignedTransaction signTransaction({
     required UnsignedTransaction unsignedTx,
     required String privateKeyHex,
-  }) async {
-    if (privateKeyHex.isEmpty) {
-      throw TransactionException('Missing local private key');
+    required String publicKeyHex,
+  }) {
+    if (privateKeyHex.isEmpty || publicKeyHex.isEmpty) {
+      throw TransactionException('Missing local signing material');
     }
 
     final hasDonation = unsignedTx.outputs.any(
@@ -143,6 +148,39 @@ class TransactionService {
       throw TransactionException('Donation output is missing from transaction');
     }
 
+    final signature = _localSignerService.signAuthorization(
+      transaction: unsignedTx,
+      privateKeyHex: privateKeyHex,
+      publicKeyHex: publicKeyHex,
+    );
+
+    final signedTransaction = SignedTransaction(
+      transaction: unsignedTx,
+      authorizationSignature: signature,
+    );
+
+    final isValid = _localSignerService.verifyAuthorization(
+      transaction: unsignedTx,
+      signature: signature,
+    );
+
+    if (!isValid) {
+      throw TransactionException('Local authorization signature verification failed');
+    }
+
+    return signedTransaction;
+  }
+
+  Future<String> signAndBroadcast({
+    required UnsignedTransaction unsignedTx,
+    required String privateKeyHex,
+    required String publicKeyHex,
+  }) async {
+    signTransaction(
+      unsignedTx: unsignedTx,
+      privateKeyHex: privateKeyHex,
+      publicKeyHex: publicKeyHex,
+    );
     return _rpcService.sendRawTransaction(unsignedTx.rawHex);
   }
 

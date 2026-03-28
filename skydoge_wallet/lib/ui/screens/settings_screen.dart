@@ -294,12 +294,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (context, state) {
           if (state is WalletBackedUp) {
             return AlertDialog(
-              title: const Text('Recovery Phrase'),
+              title: Text(
+                state.mnemonic.contains(' ')
+                    ? 'Recovery Phrase'
+                    : 'Wallet Backup Key',
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Write down these words in order and store them safely:',
+                  Text(
+                    state.mnemonic.contains(' ')
+                        ? 'Write down these words in order and store them safely:'
+                        : 'Store this backup key safely. Anyone with it can control your wallet funds.',
                     style: TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 16),

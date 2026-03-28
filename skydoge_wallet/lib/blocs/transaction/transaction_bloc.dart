@@ -10,6 +10,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   final TransactionService _transactionService;
 
   String? _privateKey;
+  String? _publicKey;
   UnsignedTransaction? _unsignedTransaction;
 
   TransactionBloc({
@@ -31,6 +32,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
 
     try {
       _privateKey = event.privateKey;
+      _publicKey = event.publicKey;
 
       final chain = NetworkConstants.chainFor(event.isTestnet);
       final unsignedTx = await _transactionService.buildTransaction(
@@ -59,7 +61,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     SignTransactionEvent event,
     Emitter<TransactionState> emit,
   ) async {
-    if (_unsignedTransaction == null || _privateKey == null) {
+    if (_unsignedTransaction == null || _privateKey == null || _publicKey == null) {
       emit(const TransactionError(message: 'No transaction to sign'));
       return;
     }
@@ -70,6 +72,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       final txid = await _transactionService.signAndBroadcast(
         unsignedTx: _unsignedTransaction!,
         privateKeyHex: _privateKey!,
+        publicKeyHex: _publicKey!,
       );
 
       emit(TransactionBroadcasted(txid: txid));
@@ -109,6 +112,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     Emitter<TransactionState> emit,
   ) {
     _privateKey = null;
+    _publicKey = null;
     _unsignedTransaction = null;
     emit(const TransactionInitial());
   }

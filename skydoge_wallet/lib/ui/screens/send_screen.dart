@@ -64,6 +64,7 @@ class _SendScreenState extends State<SendScreen> {
             feeRate: feeRate,
             fromAddress: walletState.wallet.receivingAddress,
             privateKey: walletState.wallet.privateKey,
+            publicKey: walletState.wallet.publicKey,
             isTestnet: walletState.isTestnet,
           ),
         );

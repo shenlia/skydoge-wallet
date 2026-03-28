@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skydoge_wallet/core/chain/chain_config.dart';
 import 'package:skydoge_wallet/core/constants/donation_constants.dart';
+import 'package:skydoge_wallet/core/constants/network_constants.dart';
 import 'package:skydoge_wallet/data/models/transaction.dart';
 import 'package:skydoge_wallet/services/address_service.dart';
 import 'package:skydoge_wallet/services/rpc_service.dart';
@@ -63,6 +64,30 @@ void main() {
       expect(transaction.donationFee, DonationConstants.calculateDonationFee(100000000));
       expect(transaction.outputs.any((output) => output.isDonation), isTrue);
       expect(transaction.totalCost, greaterThan(transaction.sendAmount));
+    });
+
+    test('creates and verifies local authorization signature', () async {
+      final addressWallet = await addressService.deriveWallet(
+        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+        chain: ChainConfig.mainnet,
+      );
+
+      final transaction = await transactionService.buildTransaction(
+        toAddress: addressWallet.receivingAddress,
+        sendAmount: 100000000,
+        fromAddress: addressWallet.receivingAddress,
+        feeRate: 2,
+        chain: ChainConfig.mainnet,
+      );
+
+      final signed = transactionService.signTransaction(
+        unsignedTx: transaction,
+        privateKeyHex: addressWallet.privateKey,
+        publicKeyHex: addressWallet.publicKey,
+      );
+
+      expect(signed.authorizationSignature.payloadHash, isNotEmpty);
+      expect(signed.authorizationSignature.signatureHex, contains(':'));
     });
 
     test('rejects transactions below minimum donation output', () async {

@@ -257,6 +257,36 @@ class UnsignedTransaction extends Equatable {
       ];
 }
 
+class SignatureArtifact extends Equatable {
+  final String algorithm;
+  final String payloadHash;
+  final String signatureHex;
+  final String publicKeyHex;
+
+  const SignatureArtifact({
+    required this.algorithm,
+    required this.payloadHash,
+    required this.signatureHex,
+    required this.publicKeyHex,
+  });
+
+  @override
+  List<Object?> get props => [algorithm, payloadHash, signatureHex, publicKeyHex];
+}
+
+class SignedTransaction extends Equatable {
+  final UnsignedTransaction transaction;
+  final SignatureArtifact authorizationSignature;
+
+  const SignedTransaction({
+    required this.transaction,
+    required this.authorizationSignature,
+  });
+
+  @override
+  List<Object?> get props => [transaction, authorizationSignature];
+}
+
 class TxPreview extends Equatable {
   final String toAddress;
   final String donationAddress;

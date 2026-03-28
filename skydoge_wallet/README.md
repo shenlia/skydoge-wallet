@@ -46,13 +46,15 @@ lib/
 - `lib/services/address_service.dart`
   - 提供助记词派生、WIF 导入、地址校验与地址生成
 - `lib/services/transaction_service.dart`
-  - 在交易核心中计算 donation、校验最小 donation 输出、选择 UTXO、生成预览
+  - 在交易核心中计算 donation、校验最小 donation 输出、选择 UTXO、生成预览，并在广播前执行本地授权签名校验
+- `lib/services/local_signer_service.dart`
+  - 使用本地 secp256k1 ECDSA 对待广播的原始交易负载做授权签名与验签
 - `lib/services/secure_storage_service.dart`
   - 使用 `flutter_secure_storage` 保存敏感数据，并对持久化内容再做应用层混淆处理
 
 ## 已知限制
 
-- 当前广播前的“签名”校验已从业务层面保证 donation 输出存在，但完整端上原始交易签名能力仍需继续接入更底层的 Bitcoin-like 签名实现
+- 当前已加入本地授权签名与验签流程，用于保证待广播负载在端上完成授权，但完整的 Bitcoin-like input 级原始交易签名仍需继续下沉实现
 - Android release 仍使用 debug signing 配置，正式分发前需补充签名配置
 - 依赖 Flutter SDK 与 Android SDK，本仓库本身不携带这些系统依赖
 

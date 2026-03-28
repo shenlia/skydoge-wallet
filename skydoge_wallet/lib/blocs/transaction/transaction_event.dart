@@ -13,6 +13,7 @@ class BuildTransactionEvent extends TransactionEvent {
   final int feeRate;
   final String fromAddress;
   final String privateKey;
+  final String publicKey;
   final bool isTestnet;
 
   const BuildTransactionEvent({
@@ -21,6 +22,7 @@ class BuildTransactionEvent extends TransactionEvent {
     required this.feeRate,
     required this.fromAddress,
     required this.privateKey,
+    required this.publicKey,
     required this.isTestnet,
   });
 
@@ -31,6 +33,7 @@ class BuildTransactionEvent extends TransactionEvent {
         feeRate,
         fromAddress,
         privateKey,
+        publicKey,
         isTestnet,
       ];
 }

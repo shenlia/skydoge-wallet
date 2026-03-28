@@ -19,14 +19,16 @@ class TransactionBuilding extends TransactionState {
 class TransactionBuilt extends TransactionState {
   final UnsignedTransaction transaction;
   final TxPreview preview;
+  final SignatureArtifact? localSignature;
 
   const TransactionBuilt({
     required this.transaction,
     required this.preview,
+    this.localSignature,
   });
 
   @override
-  List<Object?> get props => [transaction, preview];
+  List<Object?> get props => [transaction, preview, localSignature];
 }
 
 class TransactionSigning extends TransactionState {
