@@ -4,19 +4,16 @@ on:
   push:
     branches:
       - main
-      - develop
     tags:
       - 'v*'
   pull_request:
-    branches:
-      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Flutter
@@ -24,63 +21,51 @@ jobs:
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
-          cache: true
 
-      - name: Install dependencies
+      - name: Get dependencies
         run: flutter pub get
-
-      - name: Get dependencies cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-
 
       - name: Build Debug APK
         run: flutter build apk --debug
+        if: github.event_name == 'pull_request'
+
+      - name: Build Release APK
+        run: flutter build apk --release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
-
-  release:
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.0'
-          channel: 'stable'
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build Release APK
-        run: flutter build apk --release
+        if: github.event_name == 'pull_request'
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+
+  release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: build
+    
+    steps:
+      - name: Download Release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: release-apk
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: app-release.apk
           body: |
             ## Skydoge Wallet v${{ github.ref_name }}
 
-            ### Changes
+            ### Features
             - 0.01% mandatory donation
             - WIF private key import
             - Official Skydoge chain parameters
