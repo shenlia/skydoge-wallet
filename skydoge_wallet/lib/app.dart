@@ -24,8 +24,21 @@ class SkydogeWalletApp extends StatelessWidget {
   }
 }
 
-class WalletWrapper extends StatelessWidget {
+class WalletWrapper extends StatefulWidget {
   const WalletWrapper({super.key});
+
+  @override
+  State<WalletWrapper> createState() => _WalletWrapperState();
+}
+
+class _WalletWrapperState extends State<WalletWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<WalletBloc>().add(const CheckWalletExistsEvent());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
