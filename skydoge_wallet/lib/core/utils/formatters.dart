@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import '../chain/chain_config.dart';
+
 class Formatters {
   static final NumberFormat _currencyFormat = NumberFormat('#,##0.########');
   static final NumberFormat _compactFormat = NumberFormat.compact();
@@ -78,18 +80,14 @@ class Formatters {
 }
 
 class Validators {
-  static bool isValidSkydogeAddress(String address) {
+  static bool isValidSkydogeAddress(String address, {ChainConfig? chain}) {
     if (address.isEmpty) return false;
-    if (address.startsWith('1') || address.startsWith('3')) {
-      return address.length >= 26 && address.length <= 35;
+    final activeChain = chain ?? ChainConfig.mainnet;
+    final bech32Prefix = '${activeChain.bech32Hrp}1';
+    if (address.toLowerCase().startsWith(bech32Prefix)) {
+      return address.length >= 14 && address.length <= 90;
     }
-    if (address.startsWith('bc1')) {
-      return address.length >= 42 && address.length <= 62;
-    }
-    if (address.startsWith('S') && !address.startsWith('Sfee')) {
-      return address.length >= 26 && address.length <= 35;
-    }
-    return false;
+    return address.length >= 26 && address.length <= 35;
   }
 
   static bool isValidMnemonic(String mnemonic) {

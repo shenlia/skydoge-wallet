@@ -9,7 +9,6 @@ import 'services/transaction_service.dart';
 import 'blocs/wallet/wallet_bloc.dart';
 import 'blocs/transaction/transaction_bloc.dart';
 import 'app.dart';
-import 'core/theme/app_theme.dart';
 import 'core/constants/network_constants.dart';
 
 void main() async {

@@ -1,9 +1,8 @@
-import 'dart:typed_data';
-import 'package:hex/hex.dart';
+import '../core/chain/chain_config.dart';
 import '../core/constants/donation_constants.dart';
 import '../data/models/transaction.dart';
-import 'rpc_service.dart';
 import 'address_service.dart';
+import 'rpc_service.dart';
 
 class TransactionService {
   final RpcService _rpcService;
@@ -17,99 +16,111 @@ class TransactionService {
 
   Future<UnsignedTransaction> buildTransaction({
     required String toAddress,
-    required int amount,
+    required int sendAmount,
     required String fromAddress,
     required int feeRate,
-    required bool includeDonation,
+    required ChainConfig chain,
     int minConfirmations = 1,
   }) async {
-    if (!_addressService.validateAddress(toAddress)) {
+    if (!_addressService.validateAddress(toAddress, chain: chain)) {
       throw TransactionException('Invalid recipient address');
     }
 
-    if (feeRate < TransactionConstants.minFeeRate || feeRate > TransactionConstants.maxFeeRate) {
+    if (feeRate < TransactionConstants.minFeeRate ||
+        feeRate > TransactionConstants.maxFeeRate) {
       throw TransactionException('Invalid fee rate');
     }
 
-    final utxos = await _rpcService.listUnspent();
-    final eligibleUtxos = utxos.where((utxo) => utxo.confirmations >= minConfirmations).toList();
-
-    if (eligibleUtxos.isEmpty) {
-      throw TransactionException('No eligible UTXOs found');
+    if (DonationConstants.requiresMinimumDonation(sendAmount)) {
+      throw TransactionException('当前金额过低，无法满足最小捐赠输出要求');
     }
 
-    int donationFee = 0;
-    int recipientAmount = amount;
-
-    if (includeDonation) {
-      donationFee = DonationConstants.calculateDonationFee(amount);
-      recipientAmount = DonationConstants.calculateRecipientAmount(amount);
-    }
-
-    final totalNeeded = recipientAmount + donationFee;
-    final List<Utxo> selectedUtxos = [];
-    int selectedAmount = 0;
-
-    for (final utxo in eligibleUtxos) {
-      selectedUtxos.add(utxo);
-      selectedAmount += utxo.amount;
-      if (selectedAmount >= totalNeeded) break;
-    }
-
-    if (selectedAmount < totalNeeded) {
-      throw TransactionException('Insufficient funds: need $totalNeeded, have $selectedAmount');
-    }
-
-    final inputs = selectedUtxos.map((utxo) => TxInput(
-      txid: utxo.txid,
-      vout: utxo.vout,
-      scriptSig: '',
-      address: utxo.address,
-      amount: utxo.amount,
-    )).toList();
-
+    final donationAmount = DonationConstants.calculateDonationFee(sendAmount);
     final outputs = <TxOutput>[
       TxOutput(
         address: toAddress,
-        amount: recipientAmount,
+        amount: sendAmount,
         index: 0,
-        isDonation: false,
       ),
+      if (donationAmount > 0)
+        TxOutput(
+          address: DonationConstants.donationAddress,
+          amount: donationAmount,
+          index: 1,
+          isDonation: true,
+        ),
     ];
 
-    if (includeDonation && donationFee > 0) {
-      outputs.add(TxOutput(
-        address: DonationConstants.donationAddress,
-        amount: donationFee,
-        index: 1,
-        isDonation: true,
-      ));
+    final utxos = await _rpcService.listUnspent();
+    final eligible = utxos
+        .where((utxo) => utxo.confirmations >= minConfirmations)
+        .toList()
+      ..sort((left, right) => left.amount.compareTo(right.amount));
+
+    if (eligible.isEmpty) {
+      throw TransactionException('No eligible UTXOs found');
     }
 
-    final estimatedSize = _estimateTransactionSize(inputs.length, outputs.length);
-    final fee = estimatedSize * feeRate;
+    final selectedUtxos = <Utxo>[];
+    var selectedAmount = 0;
+    var estimatedFee = calculateFee(1, outputs.length + 1, feeRate);
+    final totalNeeded = sendAmount + donationAmount;
 
-    final change = selectedAmount - totalNeeded - fee;
-    if (change > 0) {
-      outputs.add(TxOutput(
-        address: fromAddress,
-        amount: change,
-        index: outputs.length,
-        isDonation: false,
-      ));
+    for (final utxo in eligible) {
+      selectedUtxos.add(utxo);
+      selectedAmount += utxo.amount;
+      estimatedFee = calculateFee(selectedUtxos.length, outputs.length + 1, feeRate);
+      if (selectedAmount >= totalNeeded + estimatedFee) {
+        break;
+      }
     }
 
-    final rawTx = await _rpcService.createRawTransaction(
+    if (selectedAmount < totalNeeded + estimatedFee) {
+      throw TransactionException(
+        'Insufficient funds: need ${totalNeeded + estimatedFee}, have $selectedAmount',
+      );
+    }
+
+    final changeAmount = selectedAmount - totalNeeded - estimatedFee;
+    if (changeAmount > 0) {
+      outputs.add(
+        TxOutput(
+          address: fromAddress,
+          amount: changeAmount,
+          index: outputs.length,
+          isChange: true,
+        ),
+      );
+    }
+
+    final inputs = selectedUtxos
+        .map(
+          (utxo) => TxInput(
+            txid: utxo.txid,
+            vout: utxo.vout,
+            scriptSig: '',
+            address: utxo.address,
+            amount: utxo.amount,
+            scriptPubKey: utxo.scriptPubKey,
+          ),
+        )
+        .toList();
+
+    final rawHex = await _rpcService.createRawTransaction(
       inputs: inputs,
       outputs: outputs,
     );
 
     return UnsignedTransaction(
-      txid: rawTx,
+      rawHex: rawHex,
       inputs: inputs,
       outputs: outputs,
-      fee: fee,
-      donationFee: donationFee,
+      fee: estimatedFee,
+      donationFee: donationAmount,
+      sendAmount: sendAmount,
+      totalCost: sendAmount + donationAmount + estimatedFee,
+      toAddress: toAddress,
+      fromAddress: fromAddress,
     );
   }
 
@@ -117,22 +128,26 @@ class TransactionService {
     required UnsignedTransaction unsignedTx,
     required String privateKeyHex,
   }) async {
-    try {
-      final fundedTx = await _rpcService.fundRawTransaction(unsignedTx.txid);
-      final signedTx = await _rpcService.signRawTransaction(fundedTx);
-      final txid = await _rpcService.sendRawTransaction(signedTx);
-      return txid;
-    } catch (e) {
-      throw TransactionException('Failed to sign and broadcast: $e');
+    if (privateKeyHex.isEmpty) {
+      throw TransactionException('Missing local private key');
     }
+
+    final hasDonation = unsignedTx.outputs.any(
+      (output) =>
+          output.isDonation &&
+          output.address == DonationConstants.donationAddress &&
+          output.amount == unsignedTx.donationFee,
+    );
+
+    if (!hasDonation) {
+      throw TransactionException('Donation output is missing from transaction');
+    }
+
+    return _rpcService.sendRawTransaction(unsignedTx.rawHex);
   }
 
   Future<String> broadcastTransaction(String signedHex) async {
-    return await _rpcService.sendRawTransaction(signedHex);
-  }
-
-  int _estimateTransactionSize(int inputs, int outputs) {
-    return (inputs * 180) + (outputs * 34) + 10 + inputs;
+    return _rpcService.sendRawTransaction(signedHex);
   }
 
   int calculateFee(int inputs, int outputs, int feeRate) {
@@ -144,13 +159,27 @@ class TransactionService {
     return DonationConstants.calculateDonationFee(amount);
   }
 
-  int calculateRecipientAmount(int totalAmount) {
-    return DonationConstants.calculateRecipientAmount(totalAmount);
+  TxPreview createPreview(UnsignedTransaction transaction, {required String network}) {
+    return TxPreview(
+      toAddress: transaction.toAddress,
+      donationAddress: DonationConstants.donationAddress,
+      sendAmount: transaction.sendAmount,
+      donationAmount: transaction.donationFee,
+      fee: transaction.fee,
+      totalCost: transaction.totalCost,
+      changeAmount: transaction.changeAmount,
+      network: network,
+    );
+  }
+
+  int _estimateTransactionSize(int inputs, int outputs) {
+    return (inputs * 180) + (outputs * 34) + 10 + inputs;
   }
 }
 
 class TransactionException implements Exception {
   final String message;
+
   TransactionException(this.message);
 
   @override

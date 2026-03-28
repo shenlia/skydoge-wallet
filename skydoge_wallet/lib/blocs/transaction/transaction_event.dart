@@ -9,23 +9,30 @@ abstract class TransactionEvent extends Equatable {
 
 class BuildTransactionEvent extends TransactionEvent {
   final String toAddress;
-  final int amount;
+  final int sendAmount;
   final int feeRate;
-  final bool includeDonation;
   final String fromAddress;
   final String privateKey;
+  final bool isTestnet;
 
   const BuildTransactionEvent({
     required this.toAddress,
-    required this.amount,
+    required this.sendAmount,
     required this.feeRate,
-    required this.includeDonation,
     required this.fromAddress,
     required this.privateKey,
+    required this.isTestnet,
   });
 
   @override
-  List<Object?> get props => [toAddress, amount, feeRate, includeDonation, fromAddress, privateKey];
+  List<Object?> get props => [
+        toAddress,
+        sendAmount,
+        feeRate,
+        fromAddress,
+        privateKey,
+        isTestnet,
+      ];
 }
 
 class SignTransactionEvent extends TransactionEvent {
@@ -47,13 +54,4 @@ class SetFeeRateEvent extends TransactionEvent {
 
   @override
   List<Object?> get props => [feeLevel];
-}
-
-class SetDonationEnabledEvent extends TransactionEvent {
-  final bool enabled;
-
-  const SetDonationEnabledEvent({required this.enabled});
-
-  @override
-  List<Object?> get props => [enabled];
 }

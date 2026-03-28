@@ -1,18 +1,14 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../services/transaction_service.dart';
-import '../../core/constants/donation_constants.dart';
+
+import '../../core/constants/network_constants.dart';
 import '../../data/models/transaction.dart';
+import '../../services/transaction_service.dart';
 import 'transaction_event.dart';
 import 'transaction_state.dart';
 
 class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   final TransactionService _transactionService;
 
-  String? _toAddress;
-  int? _amount;
-  int? _feeRate;
-  bool _includeDonation = true;
-  String? _fromAddress;
   String? _privateKey;
   UnsignedTransaction? _unsignedTransaction;
 
@@ -25,7 +21,6 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     on<BroadcastTransactionEvent>(_onBroadcastTransaction);
     on<ResetTransactionEvent>(_onResetTransaction);
     on<SetFeeRateEvent>(_onSetFeeRate);
-    on<SetDonationEnabledEvent>(_onSetDonationEnabled);
   }
 
   Future<void> _onBuildTransaction(
@@ -35,33 +30,28 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     emit(const TransactionBuilding());
 
     try {
-      _toAddress = event.toAddress;
-      _amount = event.amount;
-      _feeRate = event.feeRate;
-      _includeDonation = event.includeDonation;
-      _fromAddress = event.fromAddress;
       _privateKey = event.privateKey;
 
+      final chain = NetworkConstants.chainFor(event.isTestnet);
       final unsignedTx = await _transactionService.buildTransaction(
         toAddress: event.toAddress,
-        amount: event.amount,
+        sendAmount: event.sendAmount,
         fromAddress: event.fromAddress,
         feeRate: event.feeRate,
-        includeDonation: event.includeDonation,
+        chain: chain,
       );
 
       _unsignedTransaction = unsignedTx;
+      final preview = _transactionService.createPreview(
+        unsignedTx,
+        network: chain.network,
+      );
 
-      emit(TransactionBuilt(
-        transaction: unsignedTx,
-        donationFee: unsignedTx.donationFee,
-        toAddress: event.toAddress,
-        amount: event.amount,
-      ));
-    } on TransactionException catch (e) {
-      emit(TransactionError(message: e.message));
-    } catch (e) {
-      emit(TransactionError(message: 'Failed to build transaction: $e'));
+      emit(TransactionBuilt(transaction: unsignedTx, preview: preview));
+    } on TransactionException catch (error) {
+      emit(TransactionError(message: error.message));
+    } catch (error) {
+      emit(TransactionError(message: 'Failed to build transaction: $error'));
     }
   }
 
@@ -83,10 +73,10 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       );
 
       emit(TransactionBroadcasted(txid: txid));
-    } on TransactionException catch (e) {
-      emit(TransactionError(message: e.message));
-    } catch (e) {
-      emit(TransactionError(message: 'Failed to sign transaction: $e'));
+    } on TransactionException catch (error) {
+      emit(TransactionError(message: error.message));
+    } catch (error) {
+      emit(TransactionError(message: 'Failed to sign transaction: $error'));
     }
   }
 
@@ -103,14 +93,14 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       }
 
       final txid = await _transactionService.broadcastTransaction(
-        _unsignedTransaction!.txid,
+        _unsignedTransaction!.rawHex,
       );
 
       emit(TransactionBroadcasted(txid: txid));
-    } on TransactionException catch (e) {
-      emit(TransactionError(message: e.message));
-    } catch (e) {
-      emit(TransactionError(message: 'Failed to broadcast transaction: $e'));
+    } on TransactionException catch (error) {
+      emit(TransactionError(message: error.message));
+    } catch (error) {
+      emit(TransactionError(message: 'Failed to broadcast transaction: $error'));
     }
   }
 
@@ -118,14 +108,8 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     ResetTransactionEvent event,
     Emitter<TransactionState> emit,
   ) {
-    _toAddress = null;
-    _amount = null;
-    _feeRate = null;
-    _includeDonation = true;
-    _fromAddress = null;
     _privateKey = null;
     _unsignedTransaction = null;
-
     emit(const TransactionInitial());
   }
 
@@ -133,26 +117,15 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     SetFeeRateEvent event,
     Emitter<TransactionState> emit,
   ) {
-    _feeRate = TransactionConstants.getFeeRate(event.feeLevel);
-    emit(TransactionFeeRateSet(
-      feeLevel: event.feeLevel,
-      feeRate: _feeRate!,
-    ));
-  }
-
-  void _onSetDonationEnabled(
-    SetDonationEnabledEvent event,
-    Emitter<TransactionState> emit,
-  ) {
-    _includeDonation = event.enabled;
-    emit(TransactionDonationSet(enabled: event.enabled));
+    emit(
+      TransactionFeeRateSet(
+        feeLevel: event.feeLevel,
+        feeRate: TransactionConstants.getFeeRate(event.feeLevel),
+      ),
+    );
   }
 
   int calculateDonationFee(int amount) {
     return _transactionService.calculateDonationFee(amount);
-  }
-
-  int calculateRecipientAmount(int totalAmount) {
-    return _transactionService.calculateRecipientAmount(totalAmount);
   }
 }

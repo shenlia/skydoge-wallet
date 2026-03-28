@@ -64,17 +64,21 @@ class _BackupScreenState extends State<BackupScreen> {
                 color: AppTheme.warningColor,
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Important: Save Your Mnemonic',
+              Text(
+                widget.wallet.walletType == 'wif'
+                    ? 'Important: Save Your WIF Key'
+                    : 'Important: Save Your Mnemonic',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 16),
               Text(
-                'Write down these 12 words in order and store them safely. This is the only way to recover your wallet if you lose access to your device.',
+                widget.wallet.walletType == 'wif'
+                    ? 'Store this WIF private key safely. Anyone with it can control your wallet funds.'
+                    : 'Write down these 12 words in order and store them safely. This is the only way to recover your wallet if you lose access to your device.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -97,8 +101,10 @@ class _BackupScreenState extends State<BackupScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Your Mnemonic Phrase',
+                        Text(
+                          widget.wallet.walletType == 'wif'
+                              ? 'Your WIF Private Key'
+                              : 'Your Mnemonic Phrase',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
@@ -113,7 +119,9 @@ class _BackupScreenState extends State<BackupScreen> {
                     ),
                     const SizedBox(height: 16),
                     if (_showMnemonic)
-                      _buildMnemonicGrid()
+                      widget.wallet.walletType == 'wif'
+                          ? _buildWifValue()
+                          : _buildMnemonicGrid()
                     else
                       _buildHiddenMnemonic(),
                     const SizedBox(height: 16),
@@ -168,6 +176,24 @@ class _BackupScreenState extends State<BackupScreen> {
           ),
         );
       }),
+    );
+  }
+
+  Widget _buildWifValue() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: SelectableText(
+        widget.mnemonic,
+        style: const TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 14,
+        ),
+      ),
     );
   }
 
