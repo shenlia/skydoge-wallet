@@ -1,5 +1,5 @@
 class NetworkConstants {
-  static const String mainnetRpcHost = 'node1.skydoge.net';
+  static const String mainnetRpcHost = 'pool.skydoge.net';
   static const int mainnetRpcPort = 8332;
   static const String mainnetRpcUser = 'skydoge';
   static const String mainnetRpcPassword = 'your_rpc_password';
