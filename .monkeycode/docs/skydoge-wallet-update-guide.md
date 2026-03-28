@@ -7,7 +7,7 @@
 | 仓库地址 | https://github.com/shenlia/skydoge-wallet |
 | 主网仓库 | https://github.com/skydogenet |
 | 官网 | https://skydoge.net |
-| 当前版本 | v1.0.1 |
+| 当前版本 | v1.0.2 |
 | 包名 | com.skydoge.skydoge_wallet |
 
 ## 已完成的修改
@@ -192,3 +192,4 @@ sdkmanager "platforms;android-35"
 |------|------|------|
 | v1.0.0 | 2026-03-28 | 初始版本，支持自定义RPC和捐赠功能 |
 | v1.0.1 | 2026-03-28 | 修复Android 9+兼容性问题，添加网络权限和cleartextTraffic配置 |
+| v1.0.2 | 2026-03-28 | 修复启动时一直转圈问题，WalletBloc未收到初始化事件 |

@@ -6,7 +6,7 @@
 |------|------|
 | GitHub仓库 | https://github.com/shenlia/skydoge-wallet |
 | Releases下载 | https://github.com/shenlia/skydoge-wallet/releases |
-| 最新版本APK | https://github.com/shenlia/skydoge-wallet/releases/download/v1.0.1/app-debug.apk |
+| 最新版本APK | https://github.com/shenlia/skydoge-wallet/releases/download/v1.0.2/app-debug.apk |
 | 官方主网 | https://github.com/skydogenet |
 | 官方网站 | https://skydoge.net |
 
@@ -83,6 +83,7 @@ gh release upload v{x.x.x} build/app/outputs/flutter-apk/app-debug.apk --repo sh
 |------|------|----------|
 | 2026-03-28 | v1.0.0 | 初始版本，支持自定义RPC、捐赠功能(0.1%)、Drivechain侧链 |
 | 2026-03-28 | v1.0.1 | 修复Android 9+兼容性问题，添加网络权限和cleartextTraffic配置 |
+| 2026-03-28 | v1.0.2 | 修复启动时一直转圈问题，WalletBloc未收到初始化事件 |
 
 ---
 
