@@ -11,7 +11,7 @@ on:
 
 env:
   FLUTTER_VERSION: '3.24.0'
-  SKYDOGE_WALLET_DIR: skydoge_wallet
+  PROJECT_DIR: skydoge_wallet
 
 jobs:
   build:
@@ -24,8 +24,6 @@ jobs:
       - name: Get commit info
         id: commit
         run: |
-          echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
-          echo "ref=${{ github.ref }}" >> $GITHUB_OUTPUT
           echo "short_sha=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_OUTPUT
 
       - name: Setup Flutter
@@ -33,29 +31,44 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
-          cache: true
-          cache-key: flutter-${{ env.FLUTTER_VERSION }}
+
+      - name: Backup existing files
+        run: |
+          mkdir -p backup
+          cp -r ${{ env.PROJECT_DIR }}/lib backup/ 2>/dev/null || true
+          cp ${{ env.PROJECT_DIR }}/pubspec.yaml backup/ 2>/dev/null || true
+
+      - name: Create Flutter project
+        run: |
+          rm -rf ${{ env.PROJECT_DIR }}
+          flutter create --org com.skydoge --project-name skydoge_wallet --platforms android,ios ${{ env.PROJECT_DIR }}
+
+      - name: Restore source files
+        run: |
+          cp -r backup/lib/* ${{ env.PROJECT_DIR }}/lib/ 2>/dev/null || true
+          cp backup/pubspec.yaml ${{ env.PROJECT_DIR }}/ 2>/dev/null || true
+          rm -rf backup
 
       - name: Get dependencies
         run: |
-          cd ${{ env.SKYDOGE_WALLET_DIR }}
+          cd ${{ env.PROJECT_DIR }}
           flutter pub get
 
       - name: Build debug APK
         run: |
-          cd ${{ env.SKYDOGE_WALLET_DIR }}
+          cd ${{ env.PROJECT_DIR }}
           flutter build apk --debug
 
       - name: Build release APK
         run: |
-          cd ${{ env.SKYDOGE_WALLET_DIR }}
+          cd ${{ env.PROJECT_DIR }}
           flutter build apk --release
 
       - name: Prepare artifacts
         run: |
           mkdir -p artifacts
-          cp ${{ env.SKYDOGE_WALLET_DIR }}/build/app/outputs/flutter-apk/app-debug.apk artifacts/
-          cp ${{ env.SKYDOGE_WALLET_DIR }}/build/app/outputs/flutter-apk/app-release.apk artifacts/
+          cp ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-debug.apk artifacts/
+          cp ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk artifacts/
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -84,19 +97,15 @@ jobs:
             
             **Build Version**: ${{ steps.commit.outputs.short_sha }}
             **Commit**: ${{ github.sha }}
-            **Date**: ${{ github.event.head_commit.timestamp }}
             
             ### Downloads
-            - `skydoge-wallet-${{ steps.commit.outputs.short_sha }}-release.apk` - Production build
-            - `skydoge-wallet-${{ steps.commit.outputs.short_sha }}-debug.apk` - Debug build
+            - `app-release.apk` - Production build
+            - `app-debug.apk` - Debug build
             
             ### Installation
             1. Download the release APK
             2. Enable "Install from unknown sources" in device settings
             3. Install and enjoy!
-            
-            ---
-            *Built automatically from commit `${{ github.sha }}`*
           draft: false
           prerelease: false
         env:
