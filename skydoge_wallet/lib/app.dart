@@ -1,31 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'blocs/wallet/wallet_bloc.dart';
 import 'blocs/wallet/wallet_event.dart';
 import 'blocs/wallet/wallet_state.dart';
 import 'core/theme/app_theme.dart';
+import 'core/locale/locale_provider.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/welcome_screen.dart';
 import 'ui/screens/backup_screen.dart';
+import 'generated/l10n.dart';
 
 class SkydogeWalletApp extends StatelessWidget {
   const SkydogeWalletApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Skydoge Wallet',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark,
-      debugShowCheckedModeBanner: false,
-      home: const WalletWrapper(),
+    return Consumer<LocaleProvider>(
+      builder: (context, localeProvider, child) {
+        return MaterialApp(
+          title: 'Skydoge Wallet',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.dark,
+          debugShowCheckedModeBanner: false,
+          locale: localeProvider.locale,
+          supportedLocales: const [
+            Locale('en'),
+            Locale('zh'),
+          ],
+          localizationsDelegates: const [
+            S.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const WalletWrapper(),
+        );
+      },
     );
   }
 }
 
-class WalletWrapper extends StatelessWidget {
+class WalletWrapper extends StatefulWidget {
   const WalletWrapper({super.key});
+
+  @override
+  State<WalletWrapper> createState() => _WalletWrapperState();
+}
+
+class _WalletWrapperState extends State<WalletWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<WalletBloc>().add(const CheckWalletExistsEvent());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,9 +100,9 @@ class SplashScreen extends StatelessWidget {
               color: AppTheme.primaryColor,
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Skydoge Wallet',
-              style: TextStyle(
+            Text(
+              S.of(context).skydogeWallet,
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
               ),
@@ -128,9 +158,9 @@ class _LockScreenState extends State<LockScreen> {
                 color: AppTheme.primaryColor,
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Enter PIN',
-                style: TextStyle(
+              Text(
+                S.of(context).enterPin,
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -147,7 +177,7 @@ class _LockScreenState extends State<LockScreen> {
                   letterSpacing: 8,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'PIN',
+                  hintText: S.of(context).enterPin,
                   errorText: _error,
                   counterText: '',
                 ),
@@ -162,7 +192,7 @@ class _LockScreenState extends State<LockScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Unlock'),
+                    : Text(S.of(context).unlock),
               ),
             ],
           ),
@@ -202,7 +232,7 @@ class ErrorScreen extends StatelessWidget {
                 onPressed: () {
                   context.read<WalletBloc>().add(const CheckWalletExistsEvent());
                 },
-                child: const Text('Retry'),
+                child: Text(S.of(context).retry),
               ),
             ],
           ),

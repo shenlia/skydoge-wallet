@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'services/address_service.dart';
 import 'services/secure_storage_service.dart';
 import 'services/rpc_service.dart';
@@ -11,6 +12,7 @@ import 'blocs/transaction/transaction_bloc.dart';
 import 'app.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/network_constants.dart';
+import 'core/locale/locale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +41,8 @@ void main() async {
     transactionService: transactionService,
   );
 
+  final localeProvider = LocaleProvider();
+
   runApp(
     MultiProvider(
       providers: [
@@ -48,6 +52,7 @@ void main() async {
         Provider<TransactionService>.value(value: transactionService),
         BlocProvider<WalletBloc>.value(value: walletBloc),
         BlocProvider<TransactionBloc>.value(value: transactionBloc),
+        ChangeNotifierProvider<LocaleProvider>.value(value: localeProvider),
       ],
       child: const SkydogeWalletApp(),
     ),

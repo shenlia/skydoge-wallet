@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../../blocs/wallet/wallet_event.dart';
 import '../../core/theme/app_theme.dart';
+import '../../generated/l10n.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -29,9 +30,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   void _recoverWallet() {
+    final s = S.of(context);
     if (_mnemonicController.text.trim().split(' ').length != 12) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid 12-word mnemonic')),
+        SnackBar(content: Text(s.pleaseEnterValidMnemonic)),
       );
       return;
     }
@@ -45,6 +47,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -59,17 +62,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 color: AppTheme.primaryColor,
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Skydoge Wallet',
+              Text(
+                s.skydogeWallet,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Your gateway to the Skydoge ecosystem',
+                s.yourGatewayToSkydoge,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -80,28 +83,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               if (!_isRecoverMode) ...[
                 _buildOptionCard(
                   icon: Icons.add_circle_outline,
-                  title: 'Create New Wallet',
-                  description: 'Generate a new wallet with a secure mnemonic phrase',
+                  title: s.createNewWallet,
+                  description: s.createNewWalletDesc,
                   onTap: _createWallet,
                   isLoading: _isLoading,
                 ),
                 const SizedBox(height: 16),
                 _buildOptionCard(
                   icon: Icons.restore,
-                  title: 'Recover Existing Wallet',
-                  description: 'Restore your wallet using a 12-word mnemonic phrase',
+                  title: s.recoverExistingWallet,
+                  description: s.recoverExistingWalletDesc,
                   onTap: () => setState(() => _isRecoverMode = true),
                 ),
               ] else ...[
-                _buildBackButton(),
+                _buildBackButton(s),
                 const SizedBox(height: 24),
                 TextField(
                   controller: _mnemonicController,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Mnemonic Phrase',
-                    hintText: 'Enter your 12-word mnemonic phrase',
-                    prefixIcon: Icon(Icons.key),
+                  decoration: InputDecoration(
+                    labelText: s.mnemonicPhrase,
+                    hintText: s.enterMnemonicHint,
+                    prefixIcon: const Icon(Icons.key),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -113,11 +116,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Recover Wallet'),
+                      : Text(s.recoverWallet),
                 ),
               ],
               const SizedBox(height: 24),
-              _buildNetworkSwitch(),
+              _buildNetworkSwitch(s),
             ],
           ),
         ),
@@ -190,15 +193,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildBackButton() {
+  Widget _buildBackButton(S s) {
     return TextButton.icon(
       onPressed: () => setState(() => _isRecoverMode = false),
       icon: const Icon(Icons.arrow_back),
-      label: const Text('Back'),
+      label: Text(s.back),
     );
   }
 
-  Widget _buildNetworkSwitch() {
+  Widget _buildNetworkSwitch(S s) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -208,15 +211,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Network',
-                  style: TextStyle(
+                Text(
+                  s.network,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  _isTestnet ? 'Testnet' : 'Mainnet',
+                  _isTestnet ? s.testnet : s.mainnet,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[400],

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../../blocs/wallet/wallet_event.dart';
 import '../../blocs/wallet/wallet_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/donation_constants.dart';
+import '../../core/locale/locale_provider.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/repositories/node_repository.dart';
+import '../../generated/l10n.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -24,9 +27,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(s.settings),
       ),
       body: BlocBuilder<WalletBloc, WalletState>(
         builder: (context, state) {
@@ -37,22 +41,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              _buildSectionHeader('Wallet'),
-              _buildWalletInfo(state),
+              _buildSectionHeader(s.settings),
+              _buildWalletInfo(state, s),
               const SizedBox(height: 24),
-              _buildSectionHeader('Security'),
-              _buildSecuritySettings(),
+              _buildSectionHeader(s.language),
+              _buildLanguageSettings(context),
               const SizedBox(height: 24),
-              _buildSectionHeader('Network'),
-              _buildNetworkSettings(state),
+              _buildSectionHeader(s.biometricAuth),
+              _buildSecuritySettings(s),
               const SizedBox(height: 24),
-              _buildSectionHeader('Donation'),
-              _buildDonationSettings(),
+              _buildSectionHeader(s.network),
+              _buildNetworkSettings(state, s),
               const SizedBox(height: 24),
-              _buildSectionHeader('Danger Zone'),
-              _buildDangerZone(context),
+              _buildSectionHeader(s.donation),
+              _buildDonationSettings(s),
+              const SizedBox(height: 24),
+              _buildSectionHeader(s.deleteWallet),
+              _buildDangerZone(context, s),
               const SizedBox(height: 32),
-              _buildAboutSection(),
+              _buildAboutSection(s),
             ],
           );
         },
@@ -74,7 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildWalletInfo(WalletLoaded state) {
+  Widget _buildWalletInfo(WalletLoaded state, S s) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -99,9 +106,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Skydoge Wallet',
-                        style: TextStyle(
+                      Text(
+                        s.appTitle,
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -124,13 +131,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             InkWell(
               onTap: () {
                 context.read<WalletBloc>().add(const BackupWalletEvent());
-                _showBackupDialog(context);
+                _showBackupDialog(context, s);
               },
               child: Row(
                 children: [
                   const Icon(Icons.key, size: 20),
                   const SizedBox(width: 12),
-                  const Expanded(child: Text('View Recovery Phrase')),
+                  Expanded(child: Text(s.viewMnemonic)),
                   const Icon(Icons.arrow_forward_ios, size: 16),
                 ],
               ),
@@ -141,13 +148,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSecuritySettings() {
+  Widget _buildLanguageSettings(BuildContext context) {
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    return Card(
+      child: Column(
+        children: [
+          RadioListTile<String>(
+            title: const Text('English'),
+            value: 'en',
+            groupValue: localeProvider.locale.languageCode,
+            onChanged: (value) {
+              localeProvider.setLocale(const Locale('en'));
+            },
+            secondary: const Icon(Icons.language),
+          ),
+          const Divider(height: 1),
+          RadioListTile<String>(
+            title: const Text('简体中文'),
+            value: 'zh',
+            groupValue: localeProvider.locale.languageCode,
+            onChanged: (value) {
+              localeProvider.setLocale(const Locale('zh'));
+            },
+            secondary: const Icon(Icons.language),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecuritySettings(S s) {
     return Card(
       child: Column(
         children: [
           SwitchListTile(
-            title: const Text('Biometric Authentication'),
-            subtitle: const Text('Use fingerprint or face to unlock'),
+            title: Text(s.enableBiometric),
+            subtitle: Text(
+              s.biometricAuth,
+              style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+            ),
             value: _biometricEnabled,
             onChanged: (value) {
               setState(() => _biometricEnabled = value);
@@ -157,10 +196,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.lock),
-            title: const Text('Change PIN'),
+            title: Text(s.changePin),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              // TODO: Implement change PIN
             },
           ),
         ],
@@ -168,13 +206,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildNetworkSettings(WalletLoaded state) {
+  Widget _buildNetworkSettings(WalletLoaded state, S s) {
     return Card(
       child: Column(
         children: [
           ListTile(
             leading: const Icon(Icons.public),
-            title: const Text('Network'),
+            title: Text(s.network),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -187,7 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    state.isTestnet ? 'TESTNET' : 'MAINNET',
+                    state.isTestnet ? s.testnet.toUpperCase() : s.mainnet.toUpperCase(),
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -200,13 +238,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
             onTap: () {
-              _showNetworkSwitchDialog(context, state.isTestnet);
+              _showNetworkSwitchDialog(context, state.isTestnet, s);
             },
           ),
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.dns),
-            title: const Text('Custom Node'),
+            title: Text(s.customNode ?? 'Custom Node'),
             subtitle: FutureBuilder<bool>(
               future: _nodeRepository.isUsingCustomNode(),
               builder: (context, snapshot) {
@@ -222,7 +260,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              _showCustomNodeDialog(context);
+              _showCustomNodeDialog(context, s);
             },
           ),
         ],
@@ -230,14 +268,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDonationSettings() {
+  Widget _buildDonationSettings(S s) {
     return Card(
       child: Column(
         children: [
           SwitchListTile(
-            title: const Text('Enable 0.1% Donation'),
+            title: Text(s.donationEnabled),
             subtitle: Text(
-              'Donates to: ${Formatters.formatAddress(DonationConstants.donationAddress)}',
+              '${s.donationDesc}\n${Formatters.formatAddress(DonationConstants.donationAddress)}',
               style: TextStyle(fontSize: 12, color: Colors.grey[400]),
             ),
             value: _donationEnabled,
@@ -251,14 +289,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDangerZone(BuildContext context) {
+  Widget _buildDangerZone(BuildContext context, S s) {
     return Card(
       color: AppTheme.errorColor.withOpacity(0.1),
       child: Column(
         children: [
           ListTile(
             leading: const Icon(Icons.lock, color: AppTheme.errorColor),
-            title: const Text('Lock Wallet', style: TextStyle(color: AppTheme.errorColor)),
+            title: Text('Lock Wallet', style: TextStyle(color: AppTheme.errorColor)),
             onTap: () {
               context.read<WalletBloc>().add(const LockWalletEvent());
             },
@@ -266,9 +304,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 1, color: AppTheme.errorColor),
           ListTile(
             leading: const Icon(Icons.delete_forever, color: AppTheme.errorColor),
-            title: const Text('Delete Wallet', style: TextStyle(color: AppTheme.errorColor)),
+            title: Text(s.deleteWallet, style: TextStyle(color: AppTheme.errorColor)),
             onTap: () {
-              _showDeleteConfirmation(context);
+              _showDeleteConfirmation(context, s);
             },
           ),
         ],
@@ -276,13 +314,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildAboutSection() {
+  Widget _buildAboutSection(S s) {
     return Center(
       child: Column(
         children: [
-          const Text(
-            'Skydoge Wallet v1.0.0',
-            style: TextStyle(color: Colors.grey),
+          Text(
+            '${s.appTitle} v1.0.2',
+            style: const TextStyle(color: Colors.grey),
           ),
           const SizedBox(height: 4),
           Text(
@@ -294,20 +332,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showBackupDialog(BuildContext context) {
+  void _showBackupDialog(BuildContext context, S s) {
     showDialog(
       context: context,
       builder: (context) => BlocBuilder<WalletBloc, WalletState>(
         builder: (context, state) {
           if (state is WalletBackedUp) {
             return AlertDialog(
-              title: const Text('Recovery Phrase'),
+              title: Text(s.backupWallet),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Write down these words in order and store them safely:',
-                    style: TextStyle(fontSize: 14),
+                  Text(
+                    s.backupWarning,
+                    style: const TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 16),
                   Container(
@@ -329,7 +367,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
+                  child: Text(s.cancel),
                 ),
               ],
             );
@@ -340,18 +378,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showNetworkSwitchDialog(BuildContext context, bool isTestnet) {
+  void _showNetworkSwitchDialog(BuildContext context, bool isTestnet, S s) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Switch Network'),
+        title: Text('Switch Network'),
         content: const Text(
           'Are you sure you want to switch networks? This will clear cached data.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -365,18 +403,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
+  void _showDeleteConfirmation(BuildContext context, S s) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Wallet'),
-        content: const Text(
-          'Are you sure you want to delete this wallet? This action cannot be undone. Make sure you have backed up your recovery phrase.',
+        title: Text(s.deleteWallet),
+        content: Text(
+          s.deleteWalletWarning,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -386,14 +424,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.pop(context);
               context.read<WalletBloc>().add(const DeleteWalletEvent());
             },
-            child: const Text('Delete'),
+            child: Text(s.delete),
           ),
         ],
       ),
     );
   }
 
-  void _showCustomNodeDialog(BuildContext context) {
+  void _showCustomNodeDialog(BuildContext context, S s) {
     final hostController = TextEditingController();
     final portController = TextEditingController(text: '8332');
     final userController = TextEditingController();
@@ -478,7 +516,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (context.mounted) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Reset to default node')),
+                  SnackBar(content: Text('Reset to default node')),
                 );
                 setState(() {});
               }
@@ -487,7 +525,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -498,7 +536,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               if (host.isEmpty || user.isEmpty || password.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please fill in all fields')),
+                  SnackBar(content: Text('Please fill in all fields')),
                 );
                 return;
               }
@@ -523,7 +561,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {});
               }
             },
-            child: const Text('Save'),
+            child: Text(s.send),
           ),
         ],
       ),

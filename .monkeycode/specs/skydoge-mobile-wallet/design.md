@@ -2,6 +2,7 @@
 
 Feature Name: skydoge-mobile-wallet
 Updated: 2026-03-28
+Version: 1.0.2
 
 ## Description
 
@@ -359,3 +360,30 @@ dependencies:
 - [Bitcoin Core RPC Docs](/bitcoin/bitcoin)
 - [Drivechain BIP 300](https://github.com/bitcoin/bips/blob/master/bip-0300.mediawiki)
 - [Drivechain BIP 301](https://github.com/bitcoin/bips/blob/master/bip-0301.mediawiki)
+
+## Changelog
+
+### v1.0.2 (2026-03-28)
+
+**Bug Fix:**
+- Fixed WalletWrapper lifecycle issue. The `WalletWrapper` widget was previously a `StatelessWidget` and never dispatched `CheckWalletExistsEvent` upon initialization, causing the `WalletBloc` to remain in `WalletInitial` state indefinitely.
+- Changed `WalletWrapper` from `StatelessWidget` to `StatefulWidget` and added `CheckWalletExistsEvent` dispatch in `initState()`.
+
+**New Feature:**
+- Added internationalization (i18n) support with English and Simplified Chinese (简体中文) languages.
+- Users can switch language in Settings screen.
+- All UI text is now localized via `generated/l10n.dart`.
+
+**New Files Added:**
+- `lib/l10n/app_en.arb` - English localization strings
+- `lib/l10n/app_zh.arb` - Chinese localization strings
+- `lib/generated/l10n.dart` - Generated localization delegate
+- `lib/core/locale/locale_provider.dart` - Locale management with persistence
+
+**Updated Files:**
+- `lib/app.dart` - Added localization delegates and LocaleProvider
+- `lib/main.dart` - Added LocaleProvider to widget tree
+- `lib/ui/screens/home_screen.dart` - Internationalized UI strings
+- `lib/ui/screens/welcome_screen.dart` - Internationalized UI strings
+- `lib/ui/screens/settings_screen.dart` - Added language switcher and internationalized strings
+- `pubspec.yaml` - Updated version to 1.0.2, added flutter_localizations dependency
