@@ -16,21 +16,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Flutter
+      - name: Download Flutter
         run: |
           cd /opt
-          wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz -O flutter.tar.xz
-          tar xf flutter.tar.xz
-          rm flutter.tar.xz
-          echo "/opt/flutter/bin" >> $GITHUB_PATH
+          wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz
+          tar xf flutter_linux_3.24.0-stable.tar.xz
+          ls /opt/flutter/bin/
+
+      - name: Add Flutter to PATH
+        run: echo "/opt/flutter/bin" >> $GITHUB_PATH
 
       - name: Verify Flutter
         run: |
           flutter --version
-          flutter doctor
+          flutter doctor -v
 
       - name: Get dependencies
-        run: flutter pub get
+        run: |
+          flutter pub get
+          ls -la
 
       - name: Build debug APK
         run: flutter build apk --debug
@@ -50,16 +54,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Flutter
+      - name: Download Flutter
         run: |
           cd /opt
-          wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz -O flutter.tar.xz
-          tar xf flutter.tar.xz
-          rm flutter.tar.xz
-          echo "/opt/flutter/bin" >> $GITHUB_PATH
+          wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz
+          tar xf flutter_linux_3.24.0-stable.tar.xz
+
+      - name: Add Flutter to PATH
+        run: echo "/opt/flutter/bin" >> $GITHUB_PATH
 
       - name: Get dependencies
-        run: flutter pub get
+        run: |
+          flutter pub get
+          ls -la
 
       - name: Build release APK
         run: flutter build apk --release
