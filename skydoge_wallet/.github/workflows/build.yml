@@ -21,11 +21,7 @@ jobs:
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
-
-      - name: Verify Flutter project
-        run: |
-          ls -la
-          cat pubspec.yaml
+          create: false
 
       - name: Get dependencies
         run: flutter pub get
@@ -53,6 +49,7 @@ jobs:
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
+          create: false
 
       - name: Get dependencies
         run: flutter pub get
