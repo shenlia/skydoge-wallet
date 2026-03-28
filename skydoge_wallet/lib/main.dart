@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'services/address_service.dart';
 import 'services/secure_storage_service.dart';
 import 'services/rpc_service.dart';
@@ -9,6 +10,7 @@ import 'blocs/wallet/wallet_bloc.dart';
 import 'blocs/transaction/transaction_bloc.dart';
 import 'app.dart';
 import 'core/theme/app_theme.dart';
+import 'core/constants/network_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +28,8 @@ void main() async {
     secureStorageService: secureStorageService,
   );
 
-  final rpcService = RpcService(config: NetworkConfig.mainnet());
+  final networkConfig = NetworkConfig.mainnet();
+  final rpcService = RpcService(config: networkConfig);
   final transactionService = TransactionService(
     rpcService: rpcService,
     addressService: addressService,
