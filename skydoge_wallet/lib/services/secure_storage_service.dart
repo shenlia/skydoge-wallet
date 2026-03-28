@@ -52,11 +52,11 @@ class SecureStorageService {
     await _storage.write(key: _walletKey, value: encrypted);
   }
 
-  Future<Map<String, dynamic>? getWalletData() async {
+  Future<dynamic> getWalletData() async {
     final encrypted = await _storage.read(key: _walletKey);
     if (encrypted == null) return null;
     final jsonString = _decrypt(encrypted);
-    return jsonDecode(jsonString) as Map<String, dynamic>;
+    return jsonDecode(jsonString);
   }
 
   Future<void> clearAll() async {
