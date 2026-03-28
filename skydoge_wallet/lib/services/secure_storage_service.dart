@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:crypto/crypto.dart';
-import '../constants/donation_constants.dart';
+import '../constants/network_constants.dart';
 
 class SecureStorageService {
   final FlutterSecureStorage _storage;
@@ -32,10 +32,8 @@ class SecureStorageService {
     await _storage.write(key: WalletConstants.secureStoragePinKey, value: hashed);
   }
 
-  Future<bool> verifyPin(String pin) async {
-    final stored = await _storage.read(key: WalletConstants.secureStoragePinKey);
-    if (stored == null) return false;
-    return _hashPin(pin) == stored;
+  Future<bool> verifyPin(String pin, String storedHash) async {
+    return _hashPin(pin) == storedHash;
   }
 
   Future<bool> hasPin() async {
@@ -49,7 +47,7 @@ class SecureStorageService {
     await _storage.write(key: WalletConstants.secureStorageWalletKey, value: encrypted);
   }
 
-  Future<Map<String, dynamic>?> getWalletData() async {
+  Future<Map<String, dynamic>? getWalletData() async {
     final encrypted = await _storage.read(key: WalletConstants.secureStorageWalletKey);
     if (encrypted == null) return null;
     final jsonString = _decrypt(encrypted);

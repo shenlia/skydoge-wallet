@@ -27,7 +27,7 @@ class TransactionService {
       throw TransactionException('Invalid recipient address');
     }
 
-    if (!TransactionConstants.minFeeRate <= feeRate && feeRate <= TransactionConstants.maxFeeRate) {
+    if (feeRate < TransactionConstants.minFeeRate || feeRate > TransactionConstants.maxFeeRate) {
       throw TransactionException('Invalid fee rate');
     }
 
@@ -47,7 +47,7 @@ class TransactionService {
     }
 
     final totalNeeded = recipientAmount + donationFee;
-    int selectedUtxos = [];
+    final List<Utxo> selectedUtxos = [];
     int selectedAmount = 0;
 
     for (final utxo in eligibleUtxos) {
@@ -57,7 +57,7 @@ class TransactionService {
     }
 
     if (selectedAmount < totalNeeded) {
-      throw TransactionException('Insufficient funds: need ${totalNeeded}, have ${selectedAmount}');
+      throw TransactionException('Insufficient funds: need $totalNeeded, have $selectedAmount');
     }
 
     final inputs = selectedUtxos.map((utxo) => TxInput(
