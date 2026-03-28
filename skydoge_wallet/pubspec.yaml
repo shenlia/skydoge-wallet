@@ -1,0 +1,41 @@
+name: skydoge_wallet
+description: Skydoge Mobile Wallet - A cryptocurrency wallet for SKYDOGE tokens
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  flutter_coinector: ^1.0.0
+  bip39: ^1.0.0
+  bip32: ^1.0.0
+  http: ^1.1.0
+  flutter_secure_storage: ^9.0.0
+  provider: ^6.0.5
+  local_auth: ^2.1.6
+  qr_flutter: ^4.1.0
+  barcode_scan2: ^2.0.0
+  shared_preferences: ^2.2.2
+  equatable: ^2.0.5
+  intl: ^0.18.1
+  pointycastle: ^3.7.3
+  hex: ^0.2.0
+  crypto: ^3.0.3
+  base58check: ^1.0.2
+  uuid: ^4.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  mockito: ^5.4.4
+  build_runner: ^2.4.7
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
