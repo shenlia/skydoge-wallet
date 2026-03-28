@@ -19,8 +19,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: skydoge-wallet
 
       - name: Get commit info
         id: commit
@@ -35,48 +33,43 @@ jobs:
 
       - name: Create Flutter project
         run: |
-          cd skydoge-wallet
           rm -rf skydoge_wallet
           flutter create --org com.skydoge --project-name skydoge_wallet --platforms android,ios skydoge_wallet
 
       - name: Copy source files
         run: |
-          cd skydoge-wallet
           rm -rf skydoge_wallet/lib
           cp -r skydoge_wallet/lib skydoge_wallet/lib.bak 2>/dev/null || true
           rm -rf skydoge_wallet/lib
           cp -r lib skydoge_wallet/
-          cp skydoge_wallet/pubspec.yaml skydoge_wallet/pubspec.yaml.bak 2>/dev/null || true
-          rm skydoge_wallet/pubspec.yaml
           cp pubspec.yaml skydoge_wallet/
 
       - name: Update Android SDK
         run: |
-          cd skydoge-wallet/skydoge_wallet
-          if [ -f "android/app/build.gradle" ]; then
-            sed -i 's/compileSdk = 34/compileSdk = 35/' android/app/build.gradle
+          if [ -f "skydoge_wallet/android/app/build.gradle" ]; then
+            sed -i 's/compileSdk = 34/compileSdk = 35/' skydoge_wallet/android/app/build.gradle
           fi
 
       - name: Get dependencies
         run: |
-          cd skydoge-wallet/skydoge_wallet
+          cd skydoge_wallet
           flutter pub get
 
       - name: Build debug APK
         run: |
-          cd skydoge-wallet/skydoge_wallet
+          cd skydoge_wallet
           flutter build apk --debug
 
       - name: Build release APK
         run: |
-          cd skydoge-wallet/skydoge_wallet
+          cd skydoge_wallet
           flutter build apk --release
 
       - name: Prepare artifacts
         run: |
           mkdir -p artifacts
-          cp skydoge-wallet/skydoge_wallet/build/app/outputs/flutter-apk/app-debug.apk artifacts/
-          cp skydoge-wallet/skydoge_wallet/build/app/outputs/flutter-apk/app-release.apk artifacts/
+          cp skydoge_wallet/build/app/outputs/flutter-apk/app-debug.apk artifacts/
+          cp skydoge_wallet/build/app/outputs/flutter-apk/app-release.apk artifacts/
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
