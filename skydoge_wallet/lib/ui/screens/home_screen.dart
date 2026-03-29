@@ -11,6 +11,7 @@ import 'send_screen.dart';
 import 'receive_screen.dart';
 import 'settings_screen.dart';
 import 'sidechain_screen.dart';
+import 'transaction_history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -162,12 +163,28 @@ class _HomeContent extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Recent Transactions',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            const Text(
+                              'Recent Transactions',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const TransactionHistoryScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text('View All'),
+                            ),
+                          ],
                         ),
                         if (state.isTestnet)
                           Container(
