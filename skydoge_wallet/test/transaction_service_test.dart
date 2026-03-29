@@ -42,7 +42,8 @@ void main() {
       privateKeyHex: privateKeyHex,
     );
 
-    expect(signed, 'deadbeef');
+    expect(signed, isNot('deadbeef'));
+    expect(signed.length, greaterThan(20));
   });
 
   test('local signing rejects foreign input address', () async {
@@ -58,6 +59,39 @@ void main() {
           scriptSig: '',
           scriptPubKey: '76a91400',
           address: '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc',
+          amount: 1000,
+        ),
+      ],
+      outputs: const [
+        TxOutput(address: '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc', amount: 100, index: 0),
+      ],
+      fee: 10,
+      donationFee: 1,
+      network: 'mainnet',
+    );
+
+    expect(
+      () => transactionService.signLocally(
+        unsignedTx: unsigned,
+        privateKeyHex: privateKeyHex,
+      ),
+      throwsA(isA<TransactionException>()),
+    );
+  });
+
+  test('local signing rejects missing script pub key', () async {
+    const privateKeyHex =
+        '0000000000000000000000000000000000000000000000000000000000000001';
+    final ownerAddress = addressService.getAddressFromPrivateKey(privateKeyHex);
+
+    final unsigned = UnsignedTransaction(
+      rawHex: 'deadbeef',
+      inputs: [
+        TxInput(
+          txid: 'abc',
+          vout: 0,
+          scriptSig: '',
+          address: ownerAddress,
           amount: 1000,
         ),
       ],
