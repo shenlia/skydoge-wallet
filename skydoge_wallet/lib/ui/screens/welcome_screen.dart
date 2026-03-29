@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../../blocs/wallet/wallet_event.dart';
+import '../../blocs/wallet/wallet_state.dart';
 import '../../core/theme/app_theme.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -40,9 +41,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('WIF import will be completed in the next implementation step')),
-      );
+      setState(() => _isLoading = true);
+      context.read<WalletBloc>().add(ImportWifWalletEvent(
+        wif: _wifController.text.trim(),
+        isTestnet: _isTestnet,
+      ));
       return;
     }
 
@@ -64,100 +67,112 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 40),
-              Icon(
-                Icons.account_balance_wallet,
-                size: 100,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Skydoge Wallet',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your gateway to the Skydoge ecosystem',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[400],
-                ),
-              ),
-              const SizedBox(height: 48),
-              if (!_isRecoverMode) ...[
-                _buildOptionCard(
-                  icon: Icons.add_circle_outline,
-                  title: 'Create New Wallet',
-                  description: 'Generate a new wallet with a secure mnemonic phrase',
-                  onTap: _createWallet,
-                  isLoading: _isLoading,
-                ),
-                const SizedBox(height: 16),
-                _buildOptionCard(
-                  icon: Icons.restore,
-                  title: 'Recover Existing Wallet',
-                  description: 'Restore your wallet using a 12-word mnemonic phrase',
-                  onTap: () => setState(() => _isRecoverMode = true),
-                ),
-              ] else ...[
-                _buildBackButton(),
-                const SizedBox(height: 24),
-                SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment(value: false, label: Text('Mnemonic')),
-                    ButtonSegment(value: true, label: Text('WIF')),
-                  ],
-                  selected: {_isWifMode},
-                  onSelectionChanged: (value) {
-                    setState(() => _isWifMode = value.first);
-                  },
+        child: BlocListener<WalletBloc, WalletState>(
+          listener: (context, state) {
+            if (state is WalletError) {
+              setState(() => _isLoading = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            } else if (state is WalletCreated) {
+              setState(() => _isLoading = false);
+            }
+          },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 40),
+                Icon(
+                  Icons.account_balance_wallet,
+                  size: 100,
+                  color: AppTheme.primaryColor,
                 ),
                 const SizedBox(height: 24),
-                if (_isWifMode)
-                  TextField(
-                    controller: _wifController,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: 'WIF Private Key',
-                      hintText: 'Enter your WIF private key',
-                      prefixIcon: Icon(Icons.vpn_key),
-                    ),
-                  )
-                else
-                TextField(
-                  controller: _mnemonicController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Mnemonic Phrase',
-                    hintText: 'Enter your 12-word mnemonic phrase',
-                    prefixIcon: Icon(Icons.key),
+                const Text(
+                  'Skydoge Wallet',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _recoverWallet,
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(_isWifMode ? 'Import WIF' : 'Recover Wallet'),
+                const SizedBox(height: 8),
+                Text(
+                  'Your gateway to the Skydoge ecosystem',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[400],
+                  ),
                 ),
+                const SizedBox(height: 48),
+                if (!_isRecoverMode) ...[
+                  _buildOptionCard(
+                    icon: Icons.add_circle_outline,
+                    title: 'Create New Wallet',
+                    description: 'Generate a new wallet with a secure mnemonic phrase',
+                    onTap: _createWallet,
+                    isLoading: _isLoading,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildOptionCard(
+                    icon: Icons.restore,
+                    title: 'Recover Existing Wallet',
+                    description: 'Restore your wallet using a 12-word mnemonic phrase or WIF private key',
+                    onTap: () => setState(() => _isRecoverMode = true),
+                  ),
+                ] else ...[
+                  _buildBackButton(),
+                  const SizedBox(height: 24),
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment(value: false, label: Text('Mnemonic')),
+                      ButtonSegment(value: true, label: Text('WIF')),
+                    ],
+                    selected: {_isWifMode},
+                    onSelectionChanged: (value) {
+                      setState(() => _isWifMode = value.first);
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  if (_isWifMode)
+                    TextField(
+                      controller: _wifController,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'WIF Private Key',
+                        hintText: 'Enter your WIF private key',
+                        prefixIcon: Icon(Icons.vpn_key),
+                      ),
+                    )
+                  else
+                    TextField(
+                      controller: _mnemonicController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Mnemonic Phrase',
+                        hintText: 'Enter your 12-word mnemonic phrase',
+                        prefixIcon: Icon(Icons.key),
+                      ),
+                    ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _recoverWallet,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(_isWifMode ? 'Import WIF' : 'Recover Wallet'),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                _buildNetworkSwitch(),
               ],
-              const SizedBox(height: 24),
-              _buildNetworkSwitch(),
-            ],
+            ),
           ),
         ),
       ),

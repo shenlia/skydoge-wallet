@@ -20,4 +20,11 @@ void main() {
     final wallet = await service.deriveWallet(mnemonic, isTestnet: true);
     expect(wallet.receivingAddress.startsWith('m') || wallet.receivingAddress.startsWith('n'), true);
   });
+
+  test('can import wallet from WIF', () async {
+    const wif = 'KwDiBf89QgGbjEhKnhXJuH7SUW1x59A5Mta7p4QXQ9VNLYnL8pJb';
+    final wallet = await service.importFromWif(wif);
+    expect(wallet.privateKey.isNotEmpty, true);
+    expect(wallet.receivingAddress.startsWith('1'), true);
+  });
 }

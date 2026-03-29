@@ -33,6 +33,26 @@ class AddressService {
     );
   }
 
+  Future<WalletData> importFromWif(String wif, {bool isTestnet = false}) async {
+    if (!validateWif(wif, isTestnet: isTestnet)) {
+      throw ArgumentError('Invalid WIF private key');
+    }
+
+    final chain = isTestnet ? ChainConfig.testnet : ChainConfig.mainnet;
+    final privateKey = _privateKeyFromWif(wif, expectedPrefix: chain.wifPrefix);
+    final publicKey = _publicKeyFromPrivateKey(privateKey);
+    final address = _deriveAddress(publicKey, chain: chain);
+
+    return WalletData(
+      mnemonic: '',
+      seed: '',
+      privateKey: HEX.encode(privateKey),
+      publicKey: HEX.encode(publicKey),
+      receivingAddress: address,
+      network: isTestnet ? 1 : 0,
+    );
+  }
+
   String _deriveAddress(Uint8List publicKey, {required ChainConfig chain}) {
     final sha256Hash = _sha256(publicKey);
     final ripeHash160 = _ripemd160(sha256Hash);
@@ -106,6 +126,59 @@ class AddressService {
     return encoded;
   }
 
+  Uint8List _base58Decode(String encoded) {
+    const alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    BigInt value = BigInt.zero;
+    for (final char in encoded.split('')) {
+      final index = alphabet.indexOf(char);
+      if (index < 0) {
+        throw ArgumentError('Invalid Base58 character');
+      }
+      value = value * BigInt.from(58) + BigInt.from(index);
+    }
+
+    final bytes = <int>[];
+    while (value > BigInt.zero) {
+      bytes.insert(0, (value % BigInt.from(256)).toInt());
+      value = value ~/ BigInt.from(256);
+    }
+
+    final leadingZeros = encoded.split('').takeWhile((c) => c == '1').length;
+    return Uint8List.fromList(List<int>.filled(leadingZeros, 0) + bytes);
+  }
+
+  Uint8List _privateKeyFromWif(String wif, {required int expectedPrefix}) {
+    final decoded = _base58Decode(wif);
+    if (decoded.length != 37 && decoded.length != 38) {
+      throw ArgumentError('Invalid WIF length');
+    }
+
+    final payload = decoded.sublist(0, decoded.length - 4);
+    final checksum = decoded.sublist(decoded.length - 4);
+    final expectedChecksum = _doubleSha256(payload).sublist(0, 4);
+    if (!_listEquals(checksum, expectedChecksum)) {
+      throw ArgumentError('Invalid WIF checksum');
+    }
+
+    if (payload.first != expectedPrefix) {
+      throw ArgumentError('Unexpected WIF network prefix');
+    }
+
+    if (payload.length == 34 && payload.last == 0x01) {
+      return Uint8List.fromList(payload.sublist(1, 33));
+    }
+
+    return Uint8List.fromList(payload.sublist(1));
+  }
+
+  bool _listEquals(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
   bool validateAddress(String address) {
     if (address.isEmpty) return false;
 
@@ -151,7 +224,10 @@ class AddressService {
   String getAddressFromPrivateKey(String privateKeyHex, {bool isTestnet = false}) {
     final privateKeyBytes = HEX.decode(privateKeyHex);
     final ecPoint = _publicKeyFromPrivateKey(privateKeyBytes);
-    return _deriveAddress(ecPoint, isTestnet: isTestnet);
+    return _deriveAddress(
+      ecPoint,
+      chain: isTestnet ? ChainConfig.testnet : ChainConfig.mainnet,
+    );
   }
 
   Uint8List _publicKeyFromPrivateKey(List<int> privateKeyBytes) {

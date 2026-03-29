@@ -23,6 +23,7 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
     on<CheckWalletExistsEvent>(_onCheckWalletExists);
     on<CreateWalletEvent>(_onCreateWallet);
     on<RecoverWalletEvent>(_onRecoverWallet);
+    on<ImportWifWalletEvent>(_onImportWifWallet);
     on<UnlockWalletEvent>(_onUnlockWallet);
     on<LockWalletEvent>(_onLockWallet);
     on<RefreshBalanceEvent>(_onRefreshBalance);
@@ -127,6 +128,39 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
       emit(WalletCreated(wallet: wallet, mnemonic: event.mnemonic));
     } catch (e) {
       emit(WalletError(message: 'Failed to recover wallet: $e'));
+    }
+  }
+
+  Future<void> _onImportWifWallet(
+    ImportWifWalletEvent event,
+    Emitter<WalletState> emit,
+  ) async {
+    emit(const WalletLoading());
+
+    try {
+      final walletData = await _addressService.importFromWif(
+        event.wif,
+        isTestnet: event.isTestnet,
+      );
+
+      final wallet = Wallet(
+        id: _uuid.v4(),
+        name: 'Imported WIF Wallet',
+        type: 'wif',
+        mnemonic: '',
+        seed: '',
+        privateKey: walletData.privateKey,
+        publicKey: walletData.publicKey,
+        receivingAddress: walletData.receivingAddress,
+        network: walletData.network,
+        createdAt: DateTime.now(),
+      );
+
+      await _secureStorageService.saveWalletData(wallet.toJson());
+
+      emit(WalletCreated(wallet: wallet, mnemonic: ''));
+    } catch (e) {
+      emit(WalletError(message: 'Failed to import WIF wallet: $e'));
     }
   }
 
