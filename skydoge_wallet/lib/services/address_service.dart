@@ -230,6 +230,12 @@ class AddressService {
     );
   }
 
+  String getPublicKeyFromPrivateKey(String privateKeyHex) {
+    final privateKeyBytes = HEX.decode(privateKeyHex);
+    final ecPoint = _publicKeyFromPrivateKey(privateKeyBytes);
+    return HEX.encode(ecPoint);
+  }
+
   Uint8List _publicKeyFromPrivateKey(List<int> privateKeyBytes) {
     final domain = ECCurve_secp256k1();
     final point = domain.G * BigInt.parse(HEX.encode(privateKeyBytes), radix: 16);

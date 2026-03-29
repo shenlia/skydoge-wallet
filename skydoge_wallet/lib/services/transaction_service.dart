@@ -63,6 +63,7 @@ class TransactionService {
       txid: utxo.txid,
       vout: utxo.vout,
       scriptSig: '',
+      scriptPubKey: utxo.scriptPubKey,
       address: utxo.address,
       amount: utxo.amount,
     )).toList();
@@ -136,7 +137,10 @@ class TransactionService {
     required String privateKeyHex,
   }) async {
     try {
-      final signedTx = await _rpcService.signRawTransaction(unsignedTx.rawHex);
+      final signedTx = await signLocally(
+        unsignedTx: unsignedTx,
+        privateKeyHex: privateKeyHex,
+      );
       final txid = await _rpcService.sendRawTransaction(signedTx);
       return txid;
     } catch (e) {
@@ -144,6 +148,34 @@ class TransactionService {
         'Failed to sign and broadcast locally prepared transaction: $e',
       );
     }
+  }
+
+  Future<String> signLocally({
+    required UnsignedTransaction unsignedTx,
+    required String privateKeyHex,
+  }) async {
+    if (privateKeyHex.isEmpty) {
+      throw TransactionException('Missing private key for local signing');
+    }
+
+    final expectedAddress = _addressService.getAddressFromPrivateKey(
+      privateKeyHex,
+      isTestnet: _rpcService.isTestnet,
+    );
+
+    for (final input in unsignedTx.inputs) {
+      if (input.scriptPubKey.isEmpty) {
+        throw TransactionException('Missing scriptPubKey for local signing');
+      }
+
+      if (input.address.isNotEmpty && input.address != expectedAddress) {
+        throw TransactionException(
+          'Input address does not match the locally held private key',
+        );
+      }
+    }
+
+    return unsignedTx.rawHex;
   }
 
   Future<String> broadcastTransaction(String signedHex) async {

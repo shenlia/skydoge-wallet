@@ -104,15 +104,19 @@ class TxInput extends Equatable {
   final String txid;
   final int vout;
   final String scriptSig;
+  final String scriptPubKey;
   final String address;
   final int amount;
+  final int sequence;
 
   const TxInput({
     required this.txid,
     required this.vout,
     required this.scriptSig,
+    this.scriptPubKey = '',
     required this.address,
     required this.amount,
+    this.sequence = 0xffffffff,
   });
 
   Map<String, dynamic> toJson() {
@@ -120,8 +124,10 @@ class TxInput extends Equatable {
       'txid': txid,
       'vout': vout,
       'scriptSig': scriptSig,
+      'scriptPubKey': scriptPubKey,
       'address': address,
       'amount': amount,
+      'sequence': sequence,
     };
   }
 
@@ -130,13 +136,15 @@ class TxInput extends Equatable {
       txid: json['txid'] as String,
       vout: json['vout'] as int,
       scriptSig: json['scriptSig'] as String? ?? '',
+      scriptPubKey: json['scriptPubKey'] as String? ?? '',
       address: json['address'] as String? ?? '',
       amount: json['amount'] as int? ?? 0,
+      sequence: json['sequence'] as int? ?? 0xffffffff,
     );
   }
 
   @override
-  List<Object?> get props => [txid, vout, scriptSig, address, amount];
+  List<Object?> get props => [txid, vout, scriptSig, scriptPubKey, address, amount, sequence];
 }
 
 class TxOutput extends Equatable {
