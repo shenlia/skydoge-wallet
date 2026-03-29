@@ -18,7 +18,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final NodeRepository _nodeRepository = NodeRepository();
   bool _biometricEnabled = false;
-  bool _donationEnabled = true;
   bool _useCustomNode = false;
   NodeConfig? _customNodeConfig;
 
@@ -234,17 +233,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Card(
       child: Column(
         children: [
-          SwitchListTile(
-            title: const Text('Enable 0.1% Donation'),
+          ListTile(
+            leading: const Icon(Icons.volunteer_activism, color: AppTheme.accentColor),
+            title: const Text('Mandatory 0.01% Donation'),
             subtitle: Text(
               'Donates to: ${Formatters.formatAddress(DonationConstants.donationAddress)}',
               style: TextStyle(fontSize: 12, color: Colors.grey[400]),
             ),
-            value: _donationEnabled,
-            onChanged: (value) {
-              setState(() => _donationEnabled = value);
-            },
-            secondary: const Icon(Icons.volunteer_activism, color: AppTheme.accentColor),
+            trailing: const Text(
+              'Always On',
+              style: TextStyle(
+                color: AppTheme.accentColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -427,7 +429,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Port',
-                  hintText: '8332 (mainnet) or 18332 (testnet)',
+                  hintText: '8332 (mainnet RPC) or 18332 (testnet RPC)',
                   prefixIcon: Icon(Icons.numbers),
                 ),
               ),

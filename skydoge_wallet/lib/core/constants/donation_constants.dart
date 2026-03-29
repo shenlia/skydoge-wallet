@@ -1,19 +1,25 @@
 class DonationConstants {
   static const String donationAddress = '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc';
-  static const double donationRate = 0.001;
+  static const double donationRate = 0.0001;
   static const String donationDescription = 'Skydoge Development Fund';
+  static const int minDonationOutput = 546;
 
-  static int calculateDonationFee(int amountSatoshis) {
+  static int calculateDonationAmount(int amountSatoshis) {
     return (amountSatoshis * donationRate).floor();
   }
 
-  static int calculateRecipientAmount(int totalAmountSatoshis) {
-    final fee = calculateDonationFee(totalAmountSatoshis);
-    return totalAmountSatoshis - fee;
+  static int calculateDonationFee(int amountSatoshis) {
+    return calculateDonationAmount(amountSatoshis);
   }
 
-  static int calculateTotalAmount(int recipientAmount) {
-    return (recipientAmount / (1 - donationRate)).ceil();
+  static int calculateTotalAmount(int recipientAmount, int networkFee) {
+    final donation = calculateDonationAmount(recipientAmount);
+    return recipientAmount + donation + networkFee;
+  }
+
+  static bool isDonationDust(int amountSatoshis) {
+    final donation = calculateDonationAmount(amountSatoshis);
+    return donation < minDonationOutput;
   }
 }
 

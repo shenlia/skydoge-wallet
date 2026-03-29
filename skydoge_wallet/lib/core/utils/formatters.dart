@@ -97,6 +97,13 @@ class Validators {
     return words.length == 12;
   }
 
+  static bool isValidWif(String wif) {
+    if (wif.isEmpty) return false;
+    if (wif.length < 50 || wif.length > 52) return false;
+    return RegExp(r'^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$')
+        .hasMatch(wif);
+  }
+
   static bool isValidAmount(int amount) {
     return amount > 0 && amount <= 21000000000000000;
   }

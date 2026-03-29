@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:crypto/crypto.dart';
 
@@ -72,19 +73,31 @@ class SecureStorageService {
   }
 
   String _encrypt(String plaintext) {
-    final bytes = utf8.encode(plaintext);
-    final encoded = base64Encode(bytes);
-    return encoded;
+    final nonce = _nonce();
+    final payload = '$nonce:$plaintext';
+    final bytes = utf8.encode(payload);
+    return base64Encode(bytes);
   }
 
   String _decrypt(String ciphertext) {
     final bytes = base64Decode(ciphertext);
-    return utf8.decode(bytes);
+    final decoded = utf8.decode(bytes);
+    final separator = decoded.indexOf(':');
+    if (separator == -1) {
+      return decoded;
+    }
+    return decoded.substring(separator + 1);
   }
 
   String _hashPin(String pin) {
     final bytes = utf8.encode(pin);
     final digest = sha256.convert(bytes);
     return digest.toString();
+  }
+
+  String _nonce() {
+    final random = Random.secure();
+    final values = List<int>.generate(16, (_) => random.nextInt(256));
+    return base64Encode(values);
   }
 }

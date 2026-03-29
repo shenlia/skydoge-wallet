@@ -169,11 +169,11 @@ class TransactionTile extends StatelessWidget {
                     Icon(Icons.volunteer_activism, color: AppTheme.accentColor),
                     SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        'This transaction includes a 0.1% donation to support Skydoge development',
-                        style: TextStyle(
-                          color: AppTheme.accentColor,
-                          fontSize: 12,
+                        child: Text(
+                          'This transaction includes a mandatory 0.01% donation to support Skydoge development',
+                          style: TextStyle(
+                            color: AppTheme.accentColor,
+                            fontSize: 12,
                         ),
                       ),
                     ),

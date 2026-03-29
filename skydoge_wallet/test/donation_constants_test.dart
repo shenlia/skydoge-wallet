@@ -1,0 +1,13 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:skydoge_wallet/core/constants/donation_constants.dart';
+
+void main() {
+  test('donation uses 0.01 percent rate', () {
+    expect(DonationConstants.calculateDonationAmount(100000000), 10000);
+  });
+
+  test('dust donation is blocked for low amount', () {
+    expect(DonationConstants.isDonationDust(1000000), true);
+    expect(DonationConstants.isDonationDust(6000000), false);
+  });
+}

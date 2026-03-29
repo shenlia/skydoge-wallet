@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../../blocs/wallet/wallet_bloc.dart';
 import '../../blocs/wallet/wallet_state.dart';
 import '../../blocs/transaction/transaction_bloc.dart';
@@ -21,7 +20,6 @@ class _SendScreenState extends State<SendScreen> {
   final _addressController = TextEditingController();
   final _amountController = TextEditingController();
   String _feeLevel = 'medium';
-  bool _includeDonation = true;
   String? _error;
 
   @override
@@ -67,15 +65,13 @@ class _SendScreenState extends State<SendScreen> {
       toAddress: address,
       amount: amountSatoshis,
       feeRate: feeRate,
-      includeDonation: _includeDonation,
       fromAddress: walletState.wallet.receivingAddress,
       privateKey: walletState.wallet.privateKey,
     ));
   }
 
   void _showConfirmationDialog(BuildContext context, TransactionBuilt state) {
-    final donationFee = state.donationFee;
-    final totalAmount = state.amount;
+    final preview = state.preview;
 
     showDialog(
       context: context,
@@ -85,26 +81,34 @@ class _SendScreenState extends State<SendScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('To:', Formatters.formatAddress(state.toAddress)),
+            _buildDetailRow('To:', Formatters.formatAddress(preview.toAddress)),
             const SizedBox(height: 8),
-            _buildDetailRow('Amount:', Formatters.formatSatoshis(totalAmount)),
-            if (_includeDonation && donationFee > 0) ...[
-              const SizedBox(height: 8),
-              _buildDetailRow(
-                'Donation (0.1%):',
-                Formatters.formatSatoshis(donationFee),
-                valueColor: AppTheme.accentColor,
-              ),
-              const SizedBox(height: 8),
-              _buildDetailRow(
-                'You send:',
-                Formatters.formatSatoshis(totalAmount + donationFee),
-              ),
-            ],
+            _buildDetailRow('Amount:', Formatters.formatSatoshis(preview.sendAmount)),
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              'Donation (0.01%):',
+              Formatters.formatSatoshis(preview.donationAmount),
+              valueColor: AppTheme.accentColor,
+            ),
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              'Donation Address:',
+              Formatters.formatAddress(preview.donationAddress, visibleChars: 10),
+            ),
             const SizedBox(height: 8),
             _buildDetailRow(
               'Fee:',
-              Formatters.formatSatoshis(state.transaction.fee),
+              Formatters.formatSatoshis(preview.fee),
+            ),
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              'Total Cost:',
+              Formatters.formatSatoshis(preview.totalCost),
+            ),
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              'Network:',
+              preview.network,
             ),
           ],
         ),
@@ -193,7 +197,6 @@ class _SendScreenState extends State<SendScreen> {
                     if (value.isNotEmpty) {
                       final amount = double.tryParse(value);
                       if (amount != null) {
-                        final donation = DonationConstants.calculateDonationFee((amount * 100000000).round());
                         setState(() {});
                       }
                     }
@@ -218,16 +221,12 @@ class _SendScreenState extends State<SendScreen> {
                 ),
                 const SizedBox(height: 24),
                 Card(
-                  child: SwitchListTile(
-                    title: const Text('Include 0.1% Donation'),
+                  child: ListTile(
+                    title: const Text('Mandatory 0.01% Donation'),
                     subtitle: Text(
-                      'Supports Skydoge development\nDonation address: ${Formatters.formatAddress(DonationConstants.donationAddress)}',
+                      'Every transfer includes an on-chain donation output\nDonation address: ${Formatters.formatAddress(DonationConstants.donationAddress)}',
                       style: TextStyle(fontSize: 12, color: Colors.grey[400]),
                     ),
-                    value: _includeDonation,
-                    onChanged: (value) {
-                      setState(() => _includeDonation = value);
-                    },
                     secondary: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -241,7 +240,7 @@ class _SendScreenState extends State<SendScreen> {
                     ),
                   ),
                 ),
-                if (_includeDonation && _amountController.text.isNotEmpty) ...[
+                if (_amountController.text.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(12),

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:uuid/uuid.dart';
 import '../../services/address_service.dart';
 import '../../services/secure_storage_service.dart';
 import '../../services/rpc_service.dart';
@@ -8,6 +9,7 @@ import 'wallet_event.dart';
 import 'wallet_state.dart';
 
 class WalletBloc extends Bloc<WalletEvent, WalletState> {
+  static const _uuid = Uuid();
   final AddressService _addressService;
   final SecureStorageService _secureStorageService;
   RpcService? _rpcService;
@@ -73,6 +75,9 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
       await _secureStorageService.saveMnemonic(mnemonic);
 
       final wallet = Wallet(
+        id: _uuid.v4(),
+        name: 'Skydoge Wallet',
+        type: 'mnemonic',
         mnemonic: mnemonic,
         seed: walletData.seed,
         privateKey: walletData.privateKey,
@@ -105,6 +110,9 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
       await _secureStorageService.saveMnemonic(event.mnemonic);
 
       final wallet = Wallet(
+        id: _uuid.v4(),
+        name: 'Recovered Wallet',
+        type: 'mnemonic',
         mnemonic: event.mnemonic,
         seed: walletData.seed,
         privateKey: walletData.privateKey,

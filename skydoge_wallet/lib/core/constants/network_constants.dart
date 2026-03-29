@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import '../chain/chain_config.dart';
+
 class NetworkConstants {
   static const String mainnetRpcHost = 'pool.skydoge.net';
   static const int mainnetRpcPort = 8332;
@@ -12,17 +16,15 @@ class NetworkConstants {
   static const String mainnetExplorerApi = 'http://explorer.skydoge.net';
   static const String testnetExplorerApi = 'http://testnet.explorer.skydoge.net';
 
-  static const int mainnetMagic = 0xD9B4BEF9;
-  static const int testnetMagic = 0x0709110B;
-
   static const int coin = 100000000;
   static const int maxFee = 100000000;
-
   static const Duration rpcTimeout = Duration(seconds: 30);
   static const Duration connectionTimeout = Duration(seconds: 10);
+  static const int minDustOutput = 546;
 }
 
 class NetworkConfig {
+  final ChainConfig chain;
   final String host;
   final int port;
   final String user;
@@ -30,6 +32,7 @@ class NetworkConfig {
   final bool isTestnet;
 
   const NetworkConfig({
+    required this.chain,
     required this.host,
     required this.port,
     required this.user,
@@ -39,6 +42,7 @@ class NetworkConfig {
 
   factory NetworkConfig.mainnet() {
     return const NetworkConfig(
+      chain: ChainConfig.mainnet,
       host: NetworkConstants.mainnetRpcHost,
       port: NetworkConstants.mainnetRpcPort,
       user: NetworkConstants.mainnetRpcUser,
@@ -49,6 +53,7 @@ class NetworkConfig {
 
   factory NetworkConfig.testnet() {
     return const NetworkConfig(
+      chain: ChainConfig.testnet,
       host: NetworkConstants.testnetRpcHost,
       port: NetworkConstants.testnetRpcPort,
       user: NetworkConstants.testnetRpcUser,
@@ -62,10 +67,6 @@ class NetworkConfig {
 
   String _encodeAuth(String user, String password) {
     final bytes = '$user:$password'.codeUnits;
-    return hexEncode(bytes);
-  }
-
-  String hexEncode(List<int> bytes) {
-    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return base64Encode(bytes);
   }
 }

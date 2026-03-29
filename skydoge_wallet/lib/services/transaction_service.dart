@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-import 'package:hex/hex.dart';
 import '../core/constants/donation_constants.dart';
+import '../core/transaction/tx_preview.dart';
 import '../data/models/transaction.dart';
 import 'rpc_service.dart';
 import 'address_service.dart';
@@ -20,7 +19,6 @@ class TransactionService {
     required int amount,
     required String fromAddress,
     required int feeRate,
-    required bool includeDonation,
     int minConfirmations = 1,
   }) async {
     if (!_addressService.validateAddress(toAddress)) {
@@ -38,15 +36,16 @@ class TransactionService {
       throw TransactionException('No eligible UTXOs found');
     }
 
-    int donationFee = 0;
-    int recipientAmount = amount;
-
-    if (includeDonation) {
-      donationFee = DonationConstants.calculateDonationFee(amount);
-      recipientAmount = DonationConstants.calculateRecipientAmount(amount);
+    final donationFee = DonationConstants.calculateDonationAmount(amount);
+    if (DonationConstants.isDonationDust(amount)) {
+      throw TransactionException(
+        'Current amount is too low to satisfy the minimum donation output requirement',
+      );
     }
 
-    final totalNeeded = recipientAmount + donationFee;
+    final outputCount = 3;
+    final fee = _estimateTransactionSize(1, outputCount) * feeRate;
+    final totalNeeded = amount + donationFee + fee;
     final List<Utxo> selectedUtxos = [];
     int selectedAmount = 0;
 
@@ -71,13 +70,13 @@ class TransactionService {
     final outputs = <TxOutput>[
       TxOutput(
         address: toAddress,
-        amount: recipientAmount,
+        amount: amount,
         index: 0,
         isDonation: false,
       ),
     ];
 
-    if (includeDonation && donationFee > 0) {
+    if (donationFee > 0) {
       outputs.add(TxOutput(
         address: DonationConstants.donationAddress,
         amount: donationFee,
@@ -86,10 +85,9 @@ class TransactionService {
       ));
     }
 
-    final estimatedSize = _estimateTransactionSize(inputs.length, outputs.length);
-    final fee = estimatedSize * feeRate;
-
-    final change = selectedAmount - totalNeeded - fee;
+    final estimatedSize = _estimateTransactionSize(inputs.length, outputs.length + 1);
+    final actualFee = estimatedSize * feeRate;
+    final change = selectedAmount - amount - donationFee - actualFee;
     if (change > 0) {
       outputs.add(TxOutput(
         address: fromAddress,
@@ -105,11 +103,31 @@ class TransactionService {
     );
 
     return UnsignedTransaction(
-      txid: rawTx,
+      rawHex: rawTx,
       inputs: inputs,
       outputs: outputs,
-      fee: fee,
+      fee: actualFee,
       donationFee: donationFee,
+      network: _rpcService.isTestnet ? 'testnet' : 'mainnet',
+    );
+  }
+
+  TxPreview buildPreview({
+    required String toAddress,
+    required int sendAmount,
+    required int donationAmount,
+    required int fee,
+    required int changeAmount,
+  }) {
+    return TxPreview(
+      toAddress: toAddress,
+      sendAmount: sendAmount,
+      donationAmount: donationAmount,
+      donationAddress: DonationConstants.donationAddress,
+      fee: fee,
+      totalCost: sendAmount + donationAmount + fee,
+      changeAmount: changeAmount,
+      network: _rpcService.isTestnet ? 'testnet' : 'mainnet',
     );
   }
 
@@ -118,12 +136,13 @@ class TransactionService {
     required String privateKeyHex,
   }) async {
     try {
-      final fundedTx = await _rpcService.fundRawTransaction(unsignedTx.txid);
-      final signedTx = await _rpcService.signRawTransaction(fundedTx);
+      final signedTx = await _rpcService.signRawTransaction(unsignedTx.rawHex);
       final txid = await _rpcService.sendRawTransaction(signedTx);
       return txid;
     } catch (e) {
-      throw TransactionException('Failed to sign and broadcast: $e');
+      throw TransactionException(
+        'Failed to sign and broadcast locally prepared transaction: $e',
+      );
     }
   }
 
@@ -141,11 +160,7 @@ class TransactionService {
   }
 
   int calculateDonationFee(int amount) {
-    return DonationConstants.calculateDonationFee(amount);
-  }
-
-  int calculateRecipientAmount(int totalAmount) {
-    return DonationConstants.calculateRecipientAmount(totalAmount);
+    return DonationConstants.calculateDonationAmount(amount);
   }
 }
 

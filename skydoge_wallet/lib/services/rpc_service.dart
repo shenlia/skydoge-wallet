@@ -187,11 +187,19 @@ class RpcService {
   }
 
   Future<String> signRawTransaction(String hex) async {
-    final result = await call('signrawtransaction', [hex]);
-    if (result['complete'] != true) {
-      throw RpcException('Transaction signing failed: ${result['errors']}');
+    try {
+      final result = await call('signrawtransactionwithwallet', [hex]);
+      if (result['complete'] != true) {
+        throw RpcException('Transaction signing failed: ${result['errors']}');
+      }
+      return result['hex'] as String;
+    } catch (_) {
+      final legacyResult = await call('signrawtransaction', [hex]);
+      if (legacyResult['complete'] != true) {
+        throw RpcException('Transaction signing failed: ${legacyResult['errors']}');
+      }
+      return legacyResult['hex'] as String;
     }
-    return result['hex'] as String;
   }
 
   Future<List<Utxo>> listUnspent() async {

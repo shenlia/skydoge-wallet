@@ -5,6 +5,8 @@ import 'package:bip32/bip32.dart' as bip32;
 import 'package:pointycastle/export.dart';
 import 'package:hex/hex.dart';
 
+import '../core/chain/chain_config.dart';
+
 class AddressService {
   Future<String> generateMnemonic() async {
     return bip39.generateMnemonic();
@@ -13,12 +15,13 @@ class AddressService {
   Future<WalletData> deriveWallet(String mnemonic, {bool isTestnet = false}) async {
     final seed = bip39.mnemonicToSeed(mnemonic);
     final root = bip32.BIP32.fromSeed(seed);
+    final chain = isTestnet ? ChainConfig.testnet : ChainConfig.mainnet;
 
-    final child = root.derivePath("m/44'/0'/0'/0/0");
+    final child = root.derivePath(_derivationPath(chain));
     final privateKey = child.privateKey!;
     final publicKey = child.publicKey;
 
-    final address = _deriveAddress(publicKey, isTestnet: isTestnet);
+    final address = _deriveAddress(publicKey, chain: chain);
 
     return WalletData(
       mnemonic: mnemonic,
@@ -30,15 +33,16 @@ class AddressService {
     );
   }
 
-  String _deriveAddress(Uint8List publicKey, {bool isTestnet = false}) {
+  String _deriveAddress(Uint8List publicKey, {required ChainConfig chain}) {
     final sha256Hash = _sha256(publicKey);
     final ripeHash160 = _ripemd160(sha256Hash);
 
-    if (isTestnet) {
-      return _encodeP2PKH(ripeHash160, version: 0x6F);
-    } else {
-      return _encodeP2PKH(ripeHash160, version: 0x00);
-    }
+    return _encodeP2PKH(ripeHash160, version: chain.pubKeyHashPrefix);
+  }
+
+  String _derivationPath(ChainConfig chain) {
+    final coinType = chain.isTestnet ? 1 : 0;
+    return "m/44'/$coinType'/0'/0/0";
   }
 
   Uint8List _sha256(Uint8List data) {
@@ -118,6 +122,17 @@ class AddressService {
     }
 
     return false;
+  }
+
+  bool validateWif(String wif, {bool isTestnet = false}) {
+    if (wif.isEmpty) return false;
+    if (wif.length < 50 || wif.length > 52) return false;
+
+    final first = wif[0];
+    if (isTestnet) {
+      return first == '9' || first == 'c';
+    }
+    return first == '5' || first == 'K' || first == 'L';
   }
 
   bool _validateLegacyAddress(String address) {

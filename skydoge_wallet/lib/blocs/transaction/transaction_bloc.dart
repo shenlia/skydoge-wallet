@@ -11,7 +11,6 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   String? _toAddress;
   int? _amount;
   int? _feeRate;
-  bool _includeDonation = true;
   String? _fromAddress;
   String? _privateKey;
   UnsignedTransaction? _unsignedTransaction;
@@ -25,7 +24,6 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     on<BroadcastTransactionEvent>(_onBroadcastTransaction);
     on<ResetTransactionEvent>(_onResetTransaction);
     on<SetFeeRateEvent>(_onSetFeeRate);
-    on<SetDonationEnabledEvent>(_onSetDonationEnabled);
   }
 
   Future<void> _onBuildTransaction(
@@ -38,7 +36,6 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       _toAddress = event.toAddress;
       _amount = event.amount;
       _feeRate = event.feeRate;
-      _includeDonation = event.includeDonation;
       _fromAddress = event.fromAddress;
       _privateKey = event.privateKey;
 
@@ -47,16 +44,20 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         amount: event.amount,
         fromAddress: event.fromAddress,
         feeRate: event.feeRate,
-        includeDonation: event.includeDonation,
       );
 
       _unsignedTransaction = unsignedTx;
+      final preview = _transactionService.buildPreview(
+        toAddress: event.toAddress,
+        sendAmount: event.amount,
+        donationAmount: unsignedTx.donationFee,
+        fee: unsignedTx.fee,
+        changeAmount: unsignedTx.changeAmount,
+      );
 
       emit(TransactionBuilt(
         transaction: unsignedTx,
-        donationFee: unsignedTx.donationFee,
-        toAddress: event.toAddress,
-        amount: event.amount,
+        preview: preview,
       ));
     } on TransactionException catch (e) {
       emit(TransactionError(message: e.message));
@@ -103,7 +104,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       }
 
       final txid = await _transactionService.broadcastTransaction(
-        _unsignedTransaction!.txid,
+        _unsignedTransaction!.rawHex,
       );
 
       emit(TransactionBroadcasted(txid: txid));
@@ -121,7 +122,6 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     _toAddress = null;
     _amount = null;
     _feeRate = null;
-    _includeDonation = true;
     _fromAddress = null;
     _privateKey = null;
     _unsignedTransaction = null;
@@ -140,19 +140,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     ));
   }
 
-  void _onSetDonationEnabled(
-    SetDonationEnabledEvent event,
-    Emitter<TransactionState> emit,
-  ) {
-    _includeDonation = event.enabled;
-    emit(TransactionDonationSet(enabled: event.enabled));
-  }
-
   int calculateDonationFee(int amount) {
     return _transactionService.calculateDonationFee(amount);
-  }
-
-  int calculateRecipientAmount(int totalAmount) {
-    return _transactionService.calculateRecipientAmount(totalAmount);
   }
 }

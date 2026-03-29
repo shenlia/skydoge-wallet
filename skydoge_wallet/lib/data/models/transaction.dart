@@ -179,18 +179,20 @@ class TxOutput extends Equatable {
 }
 
 class UnsignedTransaction extends Equatable {
-  final String txid;
+  final String rawHex;
   final List<TxInput> inputs;
   final List<TxOutput> outputs;
   final int fee;
   final int donationFee;
+  final String network;
 
   const UnsignedTransaction({
-    required this.txid,
+    required this.rawHex,
     required this.inputs,
     required this.outputs,
     required this.fee,
     required this.donationFee,
+    required this.network,
   });
 
   int get totalInputAmount => inputs.fold(0, (sum, input) => sum + input.amount);
@@ -198,5 +200,5 @@ class UnsignedTransaction extends Equatable {
   int get changeAmount => totalInputAmount - totalOutputAmount - fee;
 
   @override
-  List<Object?> get props => [txid, inputs, outputs, fee, donationFee];
+  List<Object?> get props => [rawHex, inputs, outputs, fee, donationFee, network];
 }

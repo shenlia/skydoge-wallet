@@ -13,13 +13,16 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
   final _mnemonicController = TextEditingController();
+  final _wifController = TextEditingController();
   bool _isRecoverMode = false;
+  bool _isWifMode = false;
   bool _isTestnet = false;
   bool _isLoading = false;
 
   @override
   void dispose() {
     _mnemonicController.dispose();
+    _wifController.dispose();
     super.dispose();
   }
 
@@ -29,6 +32,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   void _recoverWallet() {
+    if (_isWifMode) {
+      if (!Validators.isValidWif(_wifController.text.trim())) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a valid WIF private key')),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('WIF import will be completed in the next implementation step')),
+      );
+      return;
+    }
+
     if (_mnemonicController.text.trim().split(' ').length != 12) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid 12-word mnemonic')),
@@ -95,6 +112,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               ] else ...[
                 _buildBackButton(),
                 const SizedBox(height: 24),
+                SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment(value: false, label: Text('Mnemonic')),
+                    ButtonSegment(value: true, label: Text('WIF')),
+                  ],
+                  selected: {_isWifMode},
+                  onSelectionChanged: (value) {
+                    setState(() => _isWifMode = value.first);
+                  },
+                ),
+                const SizedBox(height: 24),
+                if (_isWifMode)
+                  TextField(
+                    controller: _wifController,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'WIF Private Key',
+                      hintText: 'Enter your WIF private key',
+                      prefixIcon: Icon(Icons.vpn_key),
+                    ),
+                  )
+                else
                 TextField(
                   controller: _mnemonicController,
                   maxLines: 3,
@@ -113,7 +152,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Recover Wallet'),
+                      : Text(_isWifMode ? 'Import WIF' : 'Recover Wallet'),
                 ),
               ],
               const SizedBox(height: 24),
