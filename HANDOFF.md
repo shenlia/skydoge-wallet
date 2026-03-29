@@ -1,0 +1,413 @@
+# HANDOFF
+
+## 项目概况
+
+本仓库是 `skydoge-wallet`，当前重点开发目标是：在现有 Flutter + Dart 项目基础上，持续对齐《Skydoge 钱包技术架构设计文档 v0.2（Flutter 版）》。
+
+必须遵守的原则：
+
+- 继续基于当前 Flutter 仓库开发
+- 不迁移到 React Native
+- donation 规则必须落实在交易核心逻辑
+- 私钥只允许保存在端上
+- 签名必须在端上完成
+- 最终需要能构建 Android APK
+
+---
+
+## 当前仓库与分支
+
+- 仓库地址：`https://github.com/shenlia/skydoge-wallet.git`
+- 当前工作分支：`260329-feat-align-skydoge-wallet-v2`
+- 默认分支：`main`
+
+接手后建议先执行：
+
+```bash
+git checkout 260329-feat-align-skydoge-wallet-v2
+git pull
+git status
+```
+
+Pull Request 入口：
+
+- `https://github.com/shenlia/skydoge-wallet/pull/new/260329-feat-align-skydoge-wallet-v2`
+
+注意：
+
+- 之前尝试用 `gh pr create` 创建 PR 失败，原因是当前环境没有 GitHub CLI 认证
+- 之前尝试运行 Flutter 命令失败，原因是环境里没有 `flutter`
+
+---
+
+## 当前已完成工作
+
+### 1. 2.0 设计基础对齐
+
+已完成以下基础对齐：
+
+- 新增链配置集中管理：
+  - `skydoge_wallet/lib/core/chain/chain_config.dart`
+- 修正 donation 比例：
+  - 从旧版 `0.1%` 改为 `0.01%`
+- donation 改为强制开启：
+  - UI 中不再允许关闭
+- 发送确认页展示增强：
+  - 收款地址
+  - 发送金额
+  - donation 金额
+  - donation 地址
+  - fee
+  - total cost
+  - network
+- README 已重写，替换 Flutter 默认模板：
+  - `skydoge_wallet/README.md`
+
+---
+
+### 2. 钱包能力
+
+已实现：
+
+- 创建助记词钱包
+- 助记词恢复钱包
+- WIF 导入钱包
+
+WIF 导入相关实现包括：
+
+- `ImportWifWalletEvent`
+- `WalletBloc` 中的导入处理
+- `WelcomeScreen` 中的 WIF 导入入口
+- `AddressService` 中的 Base58 / WIF 解析与地址派生
+
+关键文件：
+
+- `skydoge_wallet/lib/blocs/wallet/wallet_event.dart`
+- `skydoge_wallet/lib/blocs/wallet/wallet_bloc.dart`
+- `skydoge_wallet/lib/ui/screens/welcome_screen.dart`
+- `skydoge_wallet/lib/services/address_service.dart`
+
+---
+
+### 3. donation 规则
+
+当前 donation 逻辑已调整到 2.0 目标方向：
+
+- donation 地址固定
+- donation 比例为 `0.01%`
+- donation 为强制输出
+- donation 计入总支出
+- donation 太小时阻止交易
+
+关键文件：
+
+- `skydoge_wallet/lib/core/constants/donation_constants.dart`
+- `skydoge_wallet/lib/services/transaction_service.dart`
+- `skydoge_wallet/lib/ui/screens/send_screen.dart`
+- `skydoge_wallet/lib/ui/screens/settings_screen.dart`
+
+---
+
+### 4. 本地签名能力
+
+当前已实现 P2PKH 路径的本地签名主干。
+
+已完成：
+
+- 本地序列化 unsigned raw transaction
+- 本地生成签名前镜像
+- 本地计算 `SIGHASH_ALL`
+- 使用 secp256k1 进行本地 ECDSA 签名
+- DER 编码签名
+- 拼装 P2PKH `scriptSig`
+- 生成 signed raw tx
+- 发送主路径改为走 `signLocally(...)`
+
+关键文件：
+
+- `skydoge_wallet/lib/services/transaction_service.dart`
+
+---
+
+### 5. 测试
+
+已新增测试：
+
+- `skydoge_wallet/test/donation_constants_test.dart`
+- `skydoge_wallet/test/address_service_test.dart`
+- `skydoge_wallet/test/transaction_service_test.dart`
+
+覆盖方向：
+
+- donation 计算
+- 助记词派生地址
+- WIF 导入
+- 本地签名的输入归属校验
+- 缺少 `scriptPubKey` 的签名拒绝逻辑
+
+注意：
+- 当前还没有真正执行 `flutter test`
+- 原因是当前环境缺少 `flutter`
+
+---
+
+## 最近关键提交
+
+按顺序的重要提交如下：
+
+- `0e94e9a` - `align wallet flow with skydoge v2 design`
+- `50cdc94` - `add wif wallet import flow`
+- `a768290` - `tighten local signing validation`
+- `df8825e` - `add local p2pkh transaction signing`
+
+建议接手者优先查看这些提交对应的差异。
+
+---
+
+## 当前关键文件
+
+优先阅读：
+
+- `skydoge_wallet/lib/core/chain/chain_config.dart`
+- `skydoge_wallet/lib/core/constants/donation_constants.dart`
+- `skydoge_wallet/lib/core/constants/network_constants.dart`
+- `skydoge_wallet/lib/services/address_service.dart`
+- `skydoge_wallet/lib/services/transaction_service.dart`
+- `skydoge_wallet/lib/blocs/wallet/wallet_bloc.dart`
+- `skydoge_wallet/lib/ui/screens/welcome_screen.dart`
+- `skydoge_wallet/lib/ui/screens/send_screen.dart`
+- `skydoge_wallet/test/address_service_test.dart`
+- `skydoge_wallet/test/transaction_service_test.dart`
+
+---
+
+## 当前仍未完成的工作
+
+### 1. 验证并修正本地签名
+
+虽然已经实现了 P2PKH 本地签名主干，但还没有经过真实广播验证。
+
+必须优先验证：
+
+- unsigned tx 序列化是否与链节点兼容
+- sighash 计算是否正确
+- DER 编码是否被节点接受
+- `scriptSig` 拼装是否正确
+- testnet 小额交易是否可以广播成功
+
+这是当前第一优先级。
+
+---
+
+### 2. 地址和脚本类型扩展
+
+当前本地签名实现主要面向：
+
+- legacy / P2PKH
+
+还未完善：
+
+- bech32
+- P2SH
+- sidechain 地址
+- 其他脚本类型的 UTXO 签名
+
+如果后续需求涉及这些类型，需要继续扩展。
+
+---
+
+### 3. UI 功能缺口
+
+以下能力仍需继续补齐：
+
+- 交易历史页
+- 交易详情页
+- donation 输出详情展示
+- block explorer 链接
+- 发送成功后的状态刷新
+
+说明：
+- `transaction_tile.dart` 中仍存在 block explorer 相关 TODO
+
+---
+
+### 4. 安全能力缺口
+
+虽然已使用 `flutter_secure_storage`，但仍不是最终安全方案。
+
+还需要继续加强：
+
+- seed / privateKey 的应用层加密
+- PIN / 生物识别联动
+- 解锁生命周期管理
+- 内存中敏感数据处理
+
+---
+
+### 5. 测试缺口
+
+仍需补充：
+
+- Widget 测试
+- 集成测试
+- donation 全链路专项测试
+- 确认页展示测试
+- 交易详情/历史展示测试
+- 本地签名广播流程测试
+
+---
+
+### 6. 构建验证缺口
+
+尚未验证以下命令：
+
+```bash
+flutter pub get
+flutter test
+flutter build apk --debug
+flutter build apk --release
+```
+
+需要在具备 Flutter 环境的机器上执行。
+
+---
+
+## 仓库内的重要事实
+
+### 1. 没有子模块，没有别的隐藏仓库
+
+已经检查过：
+
+- 没有 `.gitmodules`
+- 没有 git submodule
+- `skydoge_wallet/` 不是独立子仓库，而是主仓库中的 Flutter 子目录
+
+---
+
+### 2. 仓库内旧 spec 与当前 2.0 目标不完全一致
+
+`.monkeycode/specs/skydoge-mobile-wallet/` 中仍有旧设计内容，例如：
+
+- donation 比例仍写成 `0.1%`
+- donation 可开关
+- 旧设计和当前 2.0 目标存在偏差
+
+注意：
+
+- 当前代码逻辑已经比旧 spec 更接近 2.0
+- 不要简单用旧 spec 覆盖当前 donation 逻辑
+
+说明：
+- 之前没有修改 `.monkeycode`，因为该目录受仓库规则约束，修改后需要自动提交并推送
+
+---
+
+## 建议的后续开发顺序
+
+### 阶段 1：优先验证本地签名广播
+
+先做：
+
+- 用 testnet 小额交易验证 signed raw tx 是否可广播
+- 修复签名兼容性问题
+- 确认交易被节点接受
+
+这是当前最重要的下一步。
+
+---
+
+### 阶段 2：补齐交易展示能力
+
+继续完善：
+
+- 交易历史页
+- 交易详情页
+- donation 输出展示
+- block explorer 跳转
+
+---
+
+### 阶段 3：增强安全能力
+
+继续完善：
+
+- seed / privateKey 加密
+- PIN / 生物识别
+- 解锁状态管理
+
+---
+
+### 阶段 4：补测试
+
+补充：
+
+- Widget 测试
+- 集成测试
+- donation 专项测试
+- 本地签名广播链路测试
+
+---
+
+### 阶段 5：跑构建并准备交付
+
+执行：
+
+```bash
+flutter pub get
+flutter test
+flutter build apk --debug
+flutter build apk --release
+```
+
+然后更新：
+
+- README
+- 构建说明
+- 测试说明
+- 最终交付说明
+
+---
+
+## 建议接手后给用户的首条回复
+
+建议这样对用户说明：
+
+> 我已接手 `260329-feat-align-skydoge-wallet-v2` 分支，会继续基于当前 Flutter 仓库增量开发，不会迁移技术栈。  
+> 我会先验证当前已实现的本地 P2PKH 签名链路是否能在 testnet 正常广播，再继续补齐 2.0 设计剩余缺口，包括交易历史/详情、安全存储、测试和 APK 构建验证。  
+> 每完成一轮，我会汇报：做了什么、改了哪些文件、运行了哪些验证命令、是否已提交并推送。
+
+---
+
+## 建议汇报格式
+
+请在每轮开发结束后，按以下格式向用户汇报：
+
+1. 本轮完成了什么
+2. 修改了哪些文件
+3. 运行了哪些命令，结果如何
+4. 当前还剩什么问题
+5. 是否已 git 提交并推送
+6. 当前 commit hash 是什么
+
+---
+
+## 当前总结
+
+当前分支 `260329-feat-align-skydoge-wallet-v2` 已实现：
+
+- donation 规则从旧版调整到 2.0 方向
+- WIF 导入流程
+- 链配置集中管理
+- 发送确认信息增强
+- P2PKH 本地签名主干
+- 多个基础测试
+
+当前仍未完成：
+
+- 真实 testnet 广播验证
+- 更完整的交易页面
+- 更强的安全能力
+- 更完整的测试覆盖
+- Flutter 构建验证
+
+接手后请从“验证本地签名是否可在 testnet 成功广播”开始。
