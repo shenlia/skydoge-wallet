@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
-import '../../services/explorer_api_service.dart';
 import '../../data/models/transaction.dart';
+import '../screens/transaction_detail_screen.dart';
 
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
@@ -112,126 +112,13 @@ class TransactionTile extends StatelessWidget {
           ],
         ),
         onTap: () {
-          _showTransactionDetails(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TransactionDetailScreen(transaction: transaction),
+            ),
+          );
         },
-      ),
-    );
-  }
-
-  void _showTransactionDetails(BuildContext context) {
-    final explorerBaseUrl = _explorerBaseUrl(transaction);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppTheme.darkSurface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[600],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Transaction Details',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildDetailRow('Transaction ID', Formatters.formatTxid(transaction.txid, visibleChars: 16)),
-            _buildDetailRow('Direction', transaction.direction.name),
-            _buildDetailRow('Amount', Formatters.formatSatoshis(transaction.amount)),
-            _buildDetailRow('Fee', Formatters.formatSatoshis(transaction.fee)),
-            _buildDetailRow('Confirmations', transaction.confirmations.toString()),
-            _buildDetailRow('Date', Formatters.formatDateTime(transaction.timestamp)),
-            if (transaction.outputs.isNotEmpty)
-              _buildDetailRow('Primary Output', Formatters.formatAddress(transaction.outputs.first.address)),
-            if (transaction.isDonation) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.volunteer_activism, color: AppTheme.accentColor),
-                    SizedBox(width: 12),
-                    Expanded(
-                        child: Text(
-                          'This transaction includes a mandatory 0.01% donation to support Skydoge development',
-                          style: TextStyle(
-                            color: AppTheme.accentColor,
-                            fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Block Explorer: $explorerBaseUrl/tx/${transaction.txid}'),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.open_in_new),
-                label: const Text('View on Block Explorer'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _explorerBaseUrl(Transaction transaction) {
-    final hasTestnetPrefix = transaction.outputs.any((output) => output.address.startsWith('m') || output.address.startsWith('n'));
-    return hasTestnetPrefix
-        ? ExplorerApiService.testnet().baseUrl
-        : ExplorerApiService.mainnet().baseUrl;
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(color: Colors.grey[400]),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.end,
-            ),
-          ),
-        ],
       ),
     );
   }
