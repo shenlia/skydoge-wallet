@@ -21,6 +21,16 @@ void main() {
     expect(wallet.receivingAddress.startsWith('m') || wallet.receivingAddress.startsWith('n'), true);
   });
 
+  test('validateAddress accepts testnet legacy and bech32 prefixes', () {
+    expect(service.validateAddress('mkHS9ne12qx9pS9VojpwU5xtRd4T7X7ZUt'), true);
+    expect(service.validateAddress('n2eMqTT929pb1RDNuqEnxdaLau1rxy3efi'), true);
+    expect(service.validateAddress('2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br'), true);
+    expect(
+      service.validateAddress('tb1qfmz4ax7h2r8w5v4s0p0j5l6w8v9c2s3d4e5f6g'),
+      true,
+    );
+  });
+
   test('can import wallet from WIF', () async {
     const wif = 'KwDiBf89QgGbjEhKnhXJuH7SUW1x59A5Mta7p4QXQ9VNLYnL8pJb';
     final wallet = await service.importFromWif(wif);

@@ -182,11 +182,16 @@ class AddressService {
   bool validateAddress(String address) {
     if (address.isEmpty) return false;
 
-    if (address.startsWith('1') || address.startsWith('3')) {
+    if (
+        address.startsWith('1') ||
+        address.startsWith('3') ||
+        address.startsWith('m') ||
+        address.startsWith('n') ||
+        address.startsWith('2')) {
       return _validateLegacyAddress(address);
     }
 
-    if (address.startsWith('bc1')) {
+    if (address.startsWith('bc1') || address.startsWith('tb1')) {
       return _validateBech32Address(address);
     }
 

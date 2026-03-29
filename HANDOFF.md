@@ -277,6 +277,22 @@ WIF 导入相关实现包括：
 - Flutter 测试和构建仍未在当前环境实际执行
 - 区块浏览器当前仍只是展示链接提示，尚未接入真正外部跳转
 
+2026-03-29 接手验证进展（当前轮）：
+
+- 已切换并拉取 `260329-feat-align-skydoge-wallet-v2`
+- 已读取 `HANDOFF.md` 并按第一优先级开始检查 testnet 广播链路
+- 已确认当前环境仍缺少 `flutter` 和 `dart`，无法直接运行 Flutter/Dart 测试或构造一次真实钱包发送
+- 已确认 `testnet.skydoge.net` 与 `testnet.explorer.skydoge.net` 当前在本环境中无法解析 DNS，无法连通 testnet RPC/浏览器做真实广播验证
+- 已确认 `explorer.skydoge.net` 主网浏览器可访问，说明当前阻塞点集中在 testnet 域名不可解析，而非整体外网不可用
+- 已修正 `AddressService.validateAddress(...)`，补齐 testnet legacy/bech32 前缀识别：`m`、`n`、`2`、`tb1`
+- 已补充对应地址校验测试用例，避免 testnet 地址在发送前被前端本地校验错误拦截
+
+本轮结论：
+
+- 还不能证明“本地 P2PKH 签名后的 raw tx 可以在 testnet 成功广播”
+- 当前最直接阻塞因素是：缺少可解析的 testnet RPC/浏览器地址，以及缺少 Flutter/Dart 运行环境
+- 在具备可用 testnet 节点或用户提供可访问的自定义 testnet RPC 后，应继续做真实 signed raw tx 广播验证
+
 ---
 
 ### 6. 构建验证缺口
