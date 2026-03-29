@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../services/explorer_api_service.dart';
 import '../../data/models/transaction.dart';
 
 class TransactionTile extends StatelessWidget {
@@ -118,6 +119,7 @@ class TransactionTile extends StatelessWidget {
   }
 
   void _showTransactionDetails(BuildContext context) {
+    final explorerBaseUrl = _explorerBaseUrl(transaction);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -156,6 +158,8 @@ class TransactionTile extends StatelessWidget {
             _buildDetailRow('Fee', Formatters.formatSatoshis(transaction.fee)),
             _buildDetailRow('Confirmations', transaction.confirmations.toString()),
             _buildDetailRow('Date', Formatters.formatDateTime(transaction.timestamp)),
+            if (transaction.outputs.isNotEmpty)
+              _buildDetailRow('Primary Output', Formatters.formatAddress(transaction.outputs.first.address)),
             if (transaction.isDonation) ...[
               const SizedBox(height: 16),
               Container(
@@ -186,7 +190,12 @@ class TransactionTile extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () {
-                  // TODO: Implement block explorer lookup
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Block Explorer: $explorerBaseUrl/tx/${transaction.txid}'),
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.open_in_new),
                 label: const Text('View on Block Explorer'),
@@ -196,6 +205,13 @@ class TransactionTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _explorerBaseUrl(Transaction transaction) {
+    final hasTestnetPrefix = transaction.outputs.any((output) => output.address.startsWith('m') || output.address.startsWith('n'));
+    return hasTestnetPrefix
+        ? ExplorerApiService.testnet().baseUrl
+        : ExplorerApiService.mainnet().baseUrl;
   }
 
   Widget _buildDetailRow(String label, String value) {

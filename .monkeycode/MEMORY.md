@@ -27,7 +27,7 @@
 | 配置项 | 值 |
 |--------|-----|
 | 捐赠地址 | 1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc |
-| 捐赠费率 | 0.1% |
+| 捐赠费率 | 0.01% |
 | 默认RPC | pool.skydoge.net:8332 |
 | 包名 | com.skydoge.skydoge_wallet |
 
@@ -84,6 +84,22 @@ gh release upload v{x.x.x} build/app/outputs/flutter-apk/app-debug.apk --repo sh
 | 2026-03-28 | v1.0.0 | 初始版本，支持自定义RPC、捐赠功能(0.1%)、Drivechain侧链 |
 | 2026-03-28 | v1.0.1 | 修复Android 9+兼容性问题，添加网络权限和cleartextTraffic配置 |
 | 2026-03-28 | v1.0.2 | 修复启动时一直转圈问题，WalletBloc未收到初始化事件 |
+
+[交接文档维护要求]
+- Date: 2026-03-29
+- Context: 用户要求后续每次继续开发时都同步更新交接文档
+- Instructions:
+  - 每次继续开发并产生有效进展后，都要同步更新仓库根目录的 `HANDOFF.md`
+  - `HANDOFF.md` 需要记录已完成工作、当前分支、后续待办和建议接手顺序
+
+[当前 2.0 对齐状态]
+- Date: 2026-03-29
+- Context: Agent 在执行 Skydoge Wallet 2.0 对齐开发时发现
+- Category: 代码模式
+- Instructions:
+  - donation 规则已从旧版 0.1% 调整为 0.01%，并且在发送流程中强制开启
+  - 当前主开发分支为 `260329-feat-align-skydoge-wallet-v2`
+  - 已实现 WIF 导入和 P2PKH 本地签名主干，但仍需优先做 testnet 广播验证
 
 ---
 

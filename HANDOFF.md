@@ -159,6 +159,7 @@ WIF 导入相关实现包括：
 - `50cdc94` - `add wif wallet import flow`
 - `a768290` - `tighten local signing validation`
 - `df8825e` - `add local p2pkh transaction signing`
+- `93463fd` - `add project handoff guide`
 
 建议接手者优先查看这些提交对应的差异。
 
@@ -178,6 +179,7 @@ WIF 导入相关实现包括：
 - `skydoge_wallet/lib/ui/screens/send_screen.dart`
 - `skydoge_wallet/test/address_service_test.dart`
 - `skydoge_wallet/test/transaction_service_test.dart`
+- `HANDOFF.md`
 
 ---
 
@@ -254,6 +256,23 @@ WIF 导入相关实现包括：
 - 确认页展示测试
 - 交易详情/历史展示测试
 - 本地签名广播流程测试
+
+---
+
+## 最近一轮新增进展
+
+2026-03-29 新增进展：
+
+- 已把正式交接文档写入仓库根目录 `HANDOFF.md`
+- 已明确要求后续每一轮开发完成后，都必须同步更新 `HANDOFF.md`
+- 已补充交易详情弹层中的主要输出展示
+- 已将区块浏览器按钮从纯 TODO 改为可给出浏览器交易链接提示
+
+本轮仍未解决：
+
+- 区块浏览器当前只是提示链接，尚未接入真正跳转能力
+- 本地签名仍需 testnet 广播验证
+- Flutter 测试和构建仍未在当前环境实际执行
 
 ---
 
@@ -411,3 +430,7 @@ flutter build apk --release
 - Flutter 构建验证
 
 接手后请从“验证本地签名是否可在 testnet 成功广播”开始。
+
+并且请遵守：
+
+- 每完成一轮有效开发后，必须同步更新 `HANDOFF.md`
