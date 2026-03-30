@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:skydoge_wallet/core/utils/formatters.dart';
 import 'package:skydoge_wallet/services/address_service.dart';
 
 void main() {
@@ -27,6 +28,15 @@ void main() {
     expect(service.validateAddress('2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br'), true);
     expect(
       service.validateAddress('tb1qfmz4ax7h2r8w5v4s0p0j5l6w8v9c2s3d4e5f6g'),
+      true,
+    );
+  });
+
+  test('ui validator accepts testnet legacy and bech32 prefixes', () {
+    expect(Validators.isValidSkydogeAddress('mkHS9ne12qx9pS9VojpwU5xtRd4T7X7ZUt'), true);
+    expect(Validators.isValidSkydogeAddress('2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br'), true);
+    expect(
+      Validators.isValidSkydogeAddress('tb1qfmz4ax7h2r8w5v4s0p0j5l6w8v9c2s3d4e5f6g'),
       true,
     );
   });

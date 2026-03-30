@@ -221,7 +221,7 @@ class AddressService {
 
   bool _validateBech32Address(String address) {
     if (address.length < 42 || address.length > 62) return false;
-    if (!address.startsWith('bc1')) return false;
+    if (!address.startsWith('bc1') && !address.startsWith('tb1')) return false;
     const bech32Charset = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
     return address.substring(3).split('').every((c) => bech32Charset.contains(c.toLowerCase()));
   }

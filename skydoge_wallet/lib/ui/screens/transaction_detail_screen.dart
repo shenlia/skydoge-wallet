@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
@@ -188,13 +189,7 @@ class TransactionDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Block Explorer: $explorerTxUrl'),
-                ),
-              );
-            },
+            onPressed: () => _openExplorer(context, explorerTxUrl),
             icon: const Icon(Icons.open_in_new),
             label: const Text('View on Block Explorer'),
           ),
@@ -232,6 +227,23 @@ class TransactionDetailScreen extends StatelessWidget {
         backgroundColor: AppTheme.successColor,
       ),
     );
+  }
+
+  Future<void> _openExplorer(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    final launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to open block explorer'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    }
   }
 
   Widget _buildDetailRow(String label, String value) {

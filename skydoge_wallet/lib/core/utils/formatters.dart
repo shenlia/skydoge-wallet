@@ -80,10 +80,15 @@ class Formatters {
 class Validators {
   static bool isValidSkydogeAddress(String address) {
     if (address.isEmpty) return false;
-    if (address.startsWith('1') || address.startsWith('3')) {
+    if (
+        address.startsWith('1') ||
+        address.startsWith('3') ||
+        address.startsWith('m') ||
+        address.startsWith('n') ||
+        address.startsWith('2')) {
       return address.length >= 26 && address.length <= 35;
     }
-    if (address.startsWith('bc1')) {
+    if (address.startsWith('bc1') || address.startsWith('tb1')) {
       return address.length >= 42 && address.length <= 62;
     }
     if (address.startsWith('S') && !address.startsWith('Sfee')) {

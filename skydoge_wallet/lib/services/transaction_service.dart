@@ -207,6 +207,10 @@ class TransactionService {
   }
 
   Future<String> broadcastTransaction(String signedHex) async {
+    if (!_looksLikeSignedTransaction(signedHex)) {
+      throw TransactionException('Refusing to broadcast transaction that does not look signed');
+    }
+
     return await _rpcService.sendRawTransaction(signedHex);
   }
 
@@ -423,6 +427,17 @@ class TransactionService {
   String _reverseHex(String hex) {
     final bytes = HEX.decode(hex);
     return HEX.encode(bytes.reversed.toList());
+  }
+
+  bool _looksLikeSignedTransaction(String hex) {
+    if (hex.isEmpty || hex.length < 120 || hex.length.isOdd) {
+      return false;
+    }
+
+    return hex.contains('4630') ||
+        hex.contains('4730') ||
+        hex.contains('4830') ||
+        hex.contains('4930');
   }
 
   int calculateFee(int inputs, int outputs, int feeRate) {

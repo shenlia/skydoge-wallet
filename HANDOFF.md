@@ -307,6 +307,22 @@ WIF 导入相关实现包括：
 - 当前环境仍缺少 `flutter` / `dart`，因此本轮无法执行 Flutter 格式化、测试或真机验证
 - 本地签名的 testnet 广播验证仍受 testnet 域名不可解析影响，主优先级不变
 
+2026-03-30 浏览器跳转与广播保护进展（当前轮）：
+
+- 已在 `transaction_detail_screen.dart` 接入 `url_launcher`，点击 `View on Block Explorer` 会尝试使用外部应用真正打开区块浏览器链接
+- 已保留复制 `txid` 与 explorer 链接能力，作为外部跳转失败时的退路
+- 已修正 UI 层 `Validators.isValidSkydogeAddress(...)`，补齐 testnet legacy / P2SH / bech32 前缀识别，避免发送页先于服务层把 testnet 地址误判为非法
+- 已修正 `AddressService._validateBech32Address(...)`，允许 `tb1` testnet bech32 地址通过基础校验
+- 已修正 `TransactionBloc` 广播链路，避免 `BroadcastTransactionEvent` 误把 unsigned raw tx 直接送去 `sendrawtransaction`
+- 已在 `TransactionService.broadcastTransaction(...)` 增加最小签名外观校验，拒绝明显未签名的占位 payload，降低误广播错误 raw tx 的风险
+- 已补充测试用例，覆盖 UI 地址校验和未签名 payload 广播拒绝逻辑
+
+本轮结论：
+
+- 区块浏览器体验已从“仅提示链接”推进到“尝试真实外部跳转 + 失败时可复制链接”
+- 本地签名广播链路已补上一个关键保护：不会再从 `TransactionBloc` 直接广播 `_unsignedTransaction.rawHex`
+- 但这仍不等于完成 testnet 广播验证；当前仍缺少可用 testnet 节点与 Flutter 运行环境做真实验证
+
 ---
 
 ### 6. 构建验证缺口

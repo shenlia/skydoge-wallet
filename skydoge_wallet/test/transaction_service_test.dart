@@ -111,4 +111,17 @@ void main() {
       throwsA(isA<TransactionException>()),
     );
   });
+
+  test('broadcastTransaction rejects unsigned placeholder payloads', () async {
+    await expectLater(
+      transactionService.broadcastTransaction('deadbeef'),
+      throwsA(
+        isA<TransactionException>().having(
+          (error) => error.message,
+          'message',
+          contains('signed'),
+        ),
+      ),
+    );
+  });
 }

@@ -14,6 +14,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   String? _fromAddress;
   String? _privateKey;
   UnsignedTransaction? _unsignedTransaction;
+  String? _signedTransactionHex;
 
   TransactionBloc({
     required TransactionService transactionService,
@@ -54,6 +55,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         fee: unsignedTx.fee,
         changeAmount: unsignedTx.changeAmount,
       );
+      _signedTransactionHex = null;
 
       emit(TransactionBuilt(
         transaction: unsignedTx,
@@ -78,10 +80,13 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     emit(const TransactionSigning());
 
     try {
-      final txid = await _transactionService.signAndBroadcast(
+      final signedHex = await _transactionService.signLocally(
         unsignedTx: _unsignedTransaction!,
         privateKeyHex: _privateKey!,
       );
+      _signedTransactionHex = signedHex;
+
+      final txid = await _transactionService.broadcastTransaction(signedHex);
 
       emit(TransactionBroadcasted(txid: txid));
     } on TransactionException catch (e) {
@@ -103,8 +108,13 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         return;
       }
 
+      if (_signedTransactionHex == null) {
+        emit(const TransactionError(message: 'No signed transaction to broadcast'));
+        return;
+      }
+
       final txid = await _transactionService.broadcastTransaction(
-        _unsignedTransaction!.rawHex,
+        _signedTransactionHex!,
       );
 
       emit(TransactionBroadcasted(txid: txid));
@@ -125,6 +135,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     _fromAddress = null;
     _privateKey = null;
     _unsignedTransaction = null;
+    _signedTransactionHex = null;
 
     emit(const TransactionInitial());
   }
