@@ -244,7 +244,7 @@ class AddressService {
   Uint8List _publicKeyFromPrivateKey(List<int> privateKeyBytes) {
     final domain = ECCurve_secp256k1();
     final point = domain.G * BigInt.parse(HEX.encode(privateKeyBytes), radix: 16);
-    return Uint8List.fromList(point!.getEncoded(false));
+    return Uint8List.fromList(point!.getEncoded(true));
   }
 }
 

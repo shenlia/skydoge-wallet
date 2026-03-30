@@ -323,6 +323,19 @@ WIF 导入相关实现包括：
 - 本地签名广播链路已补上一个关键保护：不会再从 `TransactionBloc` 直接广播 `_unsignedTransaction.rawHex`
 - 但这仍不等于完成 testnet 广播验证；当前仍缺少可用 testnet 节点与 Flutter 运行环境做真实验证
 
+2026-03-30 压缩公钥一致性排查进展（当前轮）：
+
+- 已继续静态排查本地签名链路，发现 `AddressService.deriveWallet(...)` 使用的是 BIP32 返回的压缩公钥，而 `getAddressFromPrivateKey(...)` / `getPublicKeyFromPrivateKey(...)` 之前返回的是未压缩公钥
+- 这会导致“同一个私钥推导地址”和“钱包持久化地址”在某些路径下不一致，进而影响 `TransactionService.signLocally(...)` 的输入归属校验与签名后 `scriptSig` 中公钥格式
+- 已将 `AddressService._publicKeyFromPrivateKey(...)` 改为统一返回压缩公钥，和助记词 / WIF 导入路径保持一致
+- 已补充测试，验证 `getAddressFromPrivateKey(...)` 与助记词派生钱包地址一致，避免后续再次出现公钥压缩格式漂移
+- 已补充本地签名测试，覆盖“助记词派生私钥 + 对应地址”场景，确保签名流程不会因为地址推导不一致而被自身拦截
+
+本轮结论：
+
+- 当前本地签名链路在“地址推导格式一致性”这一层已经更接近真实链上要求，压缩公钥是更合理的默认选择
+- 这仍然不是对 testnet 广播成功的证明；后续仍需在可用节点环境里验证 raw tx 是否被链节点接受
+
 ---
 
 ### 6. 构建验证缺口

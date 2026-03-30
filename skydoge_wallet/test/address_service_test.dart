@@ -41,6 +41,15 @@ void main() {
     );
   });
 
+  test('getAddressFromPrivateKey matches mnemonic-derived wallet address', () async {
+    const mnemonic =
+        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+    final wallet = await service.deriveWallet(mnemonic);
+    final derivedAddress = service.getAddressFromPrivateKey(wallet.privateKey);
+
+    expect(derivedAddress, wallet.receivingAddress);
+  });
+
   test('can import wallet from WIF', () async {
     const wif = 'KwDiBf89QgGbjEhKnhXJuH7SUW1x59A5Mta7p4QXQ9VNLYnL8pJb';
     final wallet = await service.importFromWif(wif);

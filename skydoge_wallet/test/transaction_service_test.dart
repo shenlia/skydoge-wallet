@@ -124,4 +124,38 @@ void main() {
       ),
     );
   });
+
+  test('local signing works with mnemonic-derived private key and address pair', () async {
+    const mnemonic =
+        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+    final wallet = await addressService.deriveWallet(mnemonic);
+
+    final unsigned = UnsignedTransaction(
+      rawHex: 'deadbeef',
+      inputs: [
+        TxInput(
+          txid: '11' * 32,
+          vout: 1,
+          scriptSig: '',
+          scriptPubKey: '76a914000000000000000000000000000000000000000088ac',
+          address: wallet.receivingAddress,
+          amount: 1500,
+        ),
+      ],
+      outputs: const [
+        TxOutput(address: '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc', amount: 700, index: 0),
+      ],
+      fee: 20,
+      donationFee: 1,
+      network: 'mainnet',
+    );
+
+    final signed = await transactionService.signLocally(
+      unsignedTx: unsigned,
+      privateKeyHex: wallet.privateKey,
+    );
+
+    expect(signed, isNotEmpty);
+    expect(signed, isNot(unsigned.rawHex));
+  });
 }
