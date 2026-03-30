@@ -362,6 +362,19 @@ WIF 导入相关实现包括：
 - 当前 testnet 发送路径在 donation 输出这一层已不再默认混入主网地址，跨网构造风险明显降低
 - 当前本地签名仍只覆盖标准 P2PKH 输入；如果钱包后续需要花费 P2SH、segwit 或其他脚本类型的 UTXO，仍需补专门签名分支
 
+2026-03-30 UTXO 预过滤与构造前校验进展（当前轮）：
+
+- 已继续排查 `RpcService.listUnspent()` 到 `TransactionService.buildTransaction()` 的输入链路，发现此前只按确认数筛 UTXO，直到签名阶段才暴露“脚本不支持”或“地址不匹配”问题
+- 已把本地签名约束前移到构造阶段：当前只会选择 `address == fromAddress` 且 `scriptPubKey` 为标准 P2PKH 的 UTXO 进入待构造交易
+- 若节点返回的 UTXO 虽已确认，但不满足本地签名前提，当前会被直接跳过；如果最终没有可用输入，会明确报错 `No eligible locally signable UTXOs found`
+- 已把 bech32 目的地址的拒绝逻辑提前到 `buildTransaction(...)`，避免先构造 unsigned tx、再在签名阶段才失败
+- 已补充测试，覆盖构造阶段提前拒绝 bech32 收款地址，以及忽略不支持脚本 / 错误归属 UTXO 后给出清晰错误
+
+本轮结论：
+
+- 当前失败会更早暴露在“构造阶段”，而不是等到签名阶段才发现 UTXO 无法本地签名，问题定位成本更低
+- 但这也意味着钱包当前对可花费 UTXO 的支持范围更明确地收窄到标准 P2PKH；若链上资金以其他脚本类型存在，后续仍需专门适配
+
 ---
 
 ### 6. 构建验证缺口

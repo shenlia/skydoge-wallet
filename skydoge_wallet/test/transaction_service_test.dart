@@ -339,4 +339,90 @@ void main() {
     expect(unsigned.changeAmount, 0);
     expect(unsigned.fee, 1600);
   });
+
+  test('buildTransaction rejects bech32 recipient before signing stage', () async {
+    final ownerWallet = await addressService.deriveWallet(
+      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+    );
+    final fakeRpc = FakeRpcService(
+      config: NetworkConfig.mainnet(),
+      utxos: [
+        Utxo(
+          txid: '66' * 32,
+          vout: 0,
+          amount: 5000000,
+          confirmations: 6,
+          scriptPubKey: '76a914000000000000000000000000000000000000000088ac',
+          address: ownerWallet.receivingAddress,
+        ),
+      ],
+    );
+    final buildService = TransactionService(
+      rpcService: fakeRpc,
+      addressService: addressService,
+    );
+
+    await expectLater(
+      buildService.buildTransaction(
+        toAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+        amount: 1000000,
+        fromAddress: ownerWallet.receivingAddress,
+        feeRate: 2,
+      ),
+      throwsA(
+        isA<TransactionException>().having(
+          (error) => error.message,
+          'message',
+          contains('Bech32 outputs'),
+        ),
+      ),
+    );
+  });
+
+  test('buildTransaction ignores unsupported UTXOs and fails clearly', () async {
+    final ownerWallet = await addressService.deriveWallet(
+      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+    );
+    final fakeRpc = FakeRpcService(
+      config: NetworkConfig.mainnet(),
+      utxos: [
+        Utxo(
+          txid: '77' * 32,
+          vout: 0,
+          amount: 5000000,
+          confirmations: 6,
+          scriptPubKey: 'a914000000000000000000000000000000000000000087',
+          address: ownerWallet.receivingAddress,
+        ),
+        Utxo(
+          txid: '88' * 32,
+          vout: 1,
+          amount: 5000000,
+          confirmations: 6,
+          scriptPubKey: '76a914000000000000000000000000000000000000000088ac',
+          address: '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc',
+        ),
+      ],
+    );
+    final buildService = TransactionService(
+      rpcService: fakeRpc,
+      addressService: addressService,
+    );
+
+    await expectLater(
+      buildService.buildTransaction(
+        toAddress: '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc',
+        amount: 1000000,
+        fromAddress: ownerWallet.receivingAddress,
+        feeRate: 2,
+      ),
+      throwsA(
+        isA<TransactionException>().having(
+          (error) => error.message,
+          'message',
+          contains('locally signable UTXOs'),
+        ),
+      ),
+    );
+  });
 }

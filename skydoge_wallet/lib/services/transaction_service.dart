@@ -31,20 +31,26 @@ class TransactionService {
     if (!_addressService.validateAddress(toAddress)) {
       throw TransactionException('Invalid recipient address');
     }
+    _assertSupportedOutputAddress(toAddress);
 
     if (!_addressService.validateAddress(fromAddress)) {
       throw TransactionException('Invalid change address');
     }
+    _assertSupportedOutputAddress(fromAddress);
 
     if (feeRate < TransactionConstants.minFeeRate || feeRate > TransactionConstants.maxFeeRate) {
       throw TransactionException('Invalid fee rate');
     }
 
     final utxos = await _rpcService.listUnspent();
-    final eligibleUtxos = utxos.where((utxo) => utxo.confirmations >= minConfirmations).toList();
+    final eligibleUtxos = utxos.where(
+      (utxo) =>
+          utxo.confirmations >= minConfirmations &&
+          _isLocallySignableUtxo(utxo, fromAddress: fromAddress),
+    ).toList();
 
     if (eligibleUtxos.isEmpty) {
-      throw TransactionException('No eligible UTXOs found');
+      throw TransactionException('No eligible locally signable UTXOs found');
     }
 
     final donationFee = DonationConstants.calculateDonationAmount(amount);
@@ -89,6 +95,7 @@ class TransactionService {
     ];
 
     if (donationFee > 0) {
+      _assertSupportedOutputAddress(_donationAddress);
       outputs.add(TxOutput(
         address: _donationAddress,
         amount: donationFee,
@@ -369,9 +376,7 @@ class TransactionService {
   }
 
   List<int> _outputScriptForAddress(String address) {
-    if (address.startsWith('bc1') || address.startsWith('tb1')) {
-      throw TransactionException('Bech32 outputs are not yet supported for local signing');
-    }
+    _assertSupportedOutputAddress(address);
 
     final decoded = _base58Decode(address);
     if (decoded.length < 25) {
@@ -384,6 +389,18 @@ class TransactionService {
     }
 
     return [0x76, 0xa9, 0x14, ...hash160, 0x88, 0xac];
+  }
+
+  bool _isLocallySignableUtxo(Utxo utxo, {required String fromAddress}) {
+    return utxo.address.isNotEmpty &&
+        utxo.address == fromAddress &&
+        _isSupportedP2pkhInputScript(utxo.scriptPubKey);
+  }
+
+  void _assertSupportedOutputAddress(String address) {
+    if (address.startsWith('bc1') || address.startsWith('tb1')) {
+      throw TransactionException('Bech32 outputs are not yet supported for local signing');
+    }
   }
 
   Uint8List _base58Decode(String encoded) {
