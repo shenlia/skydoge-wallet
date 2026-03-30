@@ -101,6 +101,13 @@ gh release upload v{x.x.x} build/app/outputs/flutter-apk/app-debug.apk --repo sh
   - 当前主开发分支为 `260329-feat-align-skydoge-wallet-v2`
   - 已实现 WIF 导入和 P2PKH 本地签名主干，但仍需优先做 testnet 广播验证
 
+[持续自主推进要求]
+- Date: 2026-03-30
+- Context: 用户要求我持续执行建议中的后续工作，直到版本更完善
+- Instructions:
+  - 当我识别出明确的下一步技术改进点时，应直接继续执行，而不是等待用户逐项确认
+  - 在每轮完成有效进展后，继续选择最合理的下一步推进，直到版本明显更完善或出现阻塞
+
 ---
 
 ## 示例：如何备注更新需求

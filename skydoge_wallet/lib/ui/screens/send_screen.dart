@@ -224,7 +224,7 @@ class _SendScreenState extends State<SendScreen> {
                   child: ListTile(
                     title: const Text('Mandatory 0.01% Donation'),
                     subtitle: Text(
-                      'Every transfer includes an on-chain donation output\nDonation address: ${Formatters.formatAddress(DonationConstants.donationAddress)}',
+                      'Every transfer includes an on-chain donation output\nDonation address: ${Formatters.formatAddress(DonationConstants.donationAddressForNetwork((context.read<WalletBloc>().state as WalletLoaded).isTestnet))}',
                       style: TextStyle(fontSize: 12, color: Colors.grey[400]),
                     ),
                     secondary: Container(

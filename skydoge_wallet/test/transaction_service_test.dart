@@ -124,6 +124,64 @@ void main() {
     );
   });
 
+  test('local signing rejects non-P2PKH input scripts', () async {
+    const privateKeyHex =
+        '0000000000000000000000000000000000000000000000000000000000000001';
+    final ownerAddress = addressService.getAddressFromPrivateKey(privateKeyHex);
+
+    final unsigned = UnsignedTransaction(
+      rawHex: 'deadbeef',
+      inputs: [
+        TxInput(
+          txid: '55' * 32,
+          vout: 0,
+          scriptSig: '',
+          scriptPubKey: 'a914000000000000000000000000000000000000000087',
+          address: ownerAddress,
+          amount: 2000,
+        ),
+      ],
+      outputs: const [
+        TxOutput(address: '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc', amount: 1000, index: 0),
+      ],
+      fee: 10,
+      donationFee: 1,
+      network: 'mainnet',
+    );
+
+    await expectLater(
+      transactionService.signLocally(
+        unsignedTx: unsigned,
+        privateKeyHex: privateKeyHex,
+      ),
+      throwsA(
+        isA<TransactionException>().having(
+          (error) => error.message,
+          'message',
+          contains('Unsupported input scriptPubKey'),
+        ),
+      ),
+    );
+  });
+
+  test('buildPreview uses testnet donation address on testnet service', () {
+    final testnetService = TransactionService(
+      rpcService: RpcService(config: NetworkConfig.testnet()),
+      addressService: addressService,
+    );
+
+    final preview = testnetService.buildPreview(
+      toAddress: 'mqcLvjMSC927erejtAw6w7k8tBB9hm3Ann',
+      sendAmount: 1000,
+      donationAmount: 546,
+      fee: 100,
+      changeAmount: 0,
+    );
+
+    expect(preview.donationAddress, 'mqcLvjMSC927erejtAw6w7k8tBB9hm3Ann');
+    expect(preview.network, 'testnet');
+  });
+
   test('broadcastTransaction rejects unsigned placeholder payloads', () async {
     await expectLater(
       transactionService.broadcastTransaction('deadbeef'),

@@ -230,6 +230,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildDonationSettings() {
+    final walletState = context.read<WalletBloc>().state;
+    final donationAddress = walletState is WalletLoaded
+        ? DonationConstants.donationAddressForNetwork(walletState.isTestnet)
+        : DonationConstants.donationAddressForNetwork(false);
+
     return Card(
       child: Column(
         children: [
@@ -237,7 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: const Icon(Icons.volunteer_activism, color: AppTheme.accentColor),
             title: const Text('Mandatory 0.01% Donation'),
             subtitle: Text(
-              'Donates to: ${Formatters.formatAddress(DonationConstants.donationAddress)}',
+              'Donates to: ${Formatters.formatAddress(donationAddress)}',
               style: TextStyle(fontSize: 12, color: Colors.grey[400]),
             ),
             trailing: const Text(

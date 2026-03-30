@@ -10,4 +10,15 @@ void main() {
     expect(DonationConstants.isDonationDust(1000000), true);
     expect(DonationConstants.isDonationDust(6000000), false);
   });
+
+  test('donation address switches by network', () {
+    expect(
+      DonationConstants.donationAddressForNetwork(false),
+      DonationConstants.mainnetDonationAddress,
+    );
+    expect(
+      DonationConstants.donationAddressForNetwork(true),
+      DonationConstants.testnetDonationAddress,
+    );
+  });
 }

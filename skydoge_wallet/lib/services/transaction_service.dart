@@ -19,6 +19,8 @@ class TransactionService {
   })  : _rpcService = rpcService,
         _addressService = addressService;
 
+  String get _donationAddress => DonationConstants.donationAddressForNetwork(_rpcService.isTestnet);
+
   Future<UnsignedTransaction> buildTransaction({
     required String toAddress,
     required int amount,
@@ -88,7 +90,7 @@ class TransactionService {
 
     if (donationFee > 0) {
       outputs.add(TxOutput(
-        address: DonationConstants.donationAddress,
+        address: _donationAddress,
         amount: donationFee,
         index: 1,
         isDonation: true,
@@ -136,7 +138,7 @@ class TransactionService {
       toAddress: toAddress,
       sendAmount: sendAmount,
       donationAmount: donationAmount,
-      donationAddress: DonationConstants.donationAddress,
+      donationAddress: _donationAddress,
       fee: fee,
       totalCost: sendAmount + donationAmount + fee,
       changeAmount: changeAmount,
@@ -180,6 +182,10 @@ class TransactionService {
       final input = unsignedTx.inputs[index];
       if (input.scriptPubKey.isEmpty) {
         throw TransactionException('Missing scriptPubKey for local signing');
+      }
+
+      if (!_isSupportedP2pkhInputScript(input.scriptPubKey)) {
+        throw TransactionException('Unsupported input scriptPubKey for local signing');
       }
 
       if (input.address.isNotEmpty && input.address != expectedAddress) {
@@ -453,6 +459,12 @@ class TransactionService {
         hex.contains('4730') ||
         hex.contains('4830') ||
         hex.contains('4930');
+  }
+
+  bool _isSupportedP2pkhInputScript(String scriptPubKey) {
+    return scriptPubKey.length == 50 &&
+        scriptPubKey.startsWith('76a914') &&
+        scriptPubKey.endsWith('88ac');
   }
 
   int calculateFee(int inputs, int outputs, int feeRate) {

@@ -349,6 +349,19 @@ WIF 导入相关实现包括：
 - 本地交易构造现在更不容易产出“脚本类型错误”或“dust 找零”这类节点会直接拒收的 raw tx
 - 但 bech32 输出仍未完成真正支持；如果要支持 `bc1` / `tb1` 目的地址，后续仍需要补齐 segwit 输出脚本与对应签名路径
 
+2026-03-30 donation 网络与输入脚本约束进展（当前轮）：
+
+- 已继续排查 donation 输出的网络一致性，发现此前 donation 地址在 mainnet 与 testnet 下共用同一个固定主网地址，这会让 testnet 交易构造出跨网风格输出
+- 已为 donation 常量增加按网络切换能力：mainnet 继续使用 `1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc`，testnet 改为同一 hash160 对应的 testnet 地址 `mqcLvjMSC927erejtAw6w7k8tBB9hm3Ann`
+- 已同步更新发送页预览、设置页展示和 `TransactionService.buildPreview(...)`，确保 UI 与交易构造使用同一 donation 地址来源
+- 已继续收紧 `TransactionService.signLocally(...)` 的输入假设：当前仅明确支持标准 P2PKH 输入脚本，若拿到 P2SH/其他脚本类型的 UTXO，会直接报出显式错误而不是尝试错误签名
+- 已补充测试，覆盖 donation 地址按网络切换、testnet preview donation 地址，以及非 P2PKH 输入脚本被显式拒绝的行为
+
+本轮结论：
+
+- 当前 testnet 发送路径在 donation 输出这一层已不再默认混入主网地址，跨网构造风险明显降低
+- 当前本地签名仍只覆盖标准 P2PKH 输入；如果钱包后续需要花费 P2SH、segwit 或其他脚本类型的 UTXO，仍需补专门签名分支
+
 ---
 
 ### 6. 构建验证缺口
