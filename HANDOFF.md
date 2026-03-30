@@ -357,6 +357,11 @@ WIF 导入相关实现包括：
 - 已继续收紧 `TransactionService.signLocally(...)` 的输入假设：当前仅明确支持标准 P2PKH 输入脚本，若拿到 P2SH/其他脚本类型的 UTXO，会直接报出显式错误而不是尝试错误签名
 - 已补充测试，覆盖 donation 地址按网络切换、testnet preview donation 地址，以及非 P2PKH 输入脚本被显式拒绝的行为
 
+补充修正：
+
+- 上述结论基于较旧阶段的 testnet 参数假设；在本轮直接核对 `skydogehash` 源码后，这部分已经过时
+- 按 `skydogehash` 最新链参数，testnet 现已刻意复用 mainnet 地址前缀，因此 donation 输出在 testnet 下继续使用主网字符串地址并不再天然构成跨网错误
+
 本轮结论：
 
 - 当前 testnet 发送路径在 donation 输出这一层已不再默认混入主网地址，跨网构造风险明显降低
@@ -528,6 +533,21 @@ flutter build apk --release
 
 - 当前“主要运行库”的判断已经收敛到 `skydogenet/mainchain`，后续钱包兼容基线不应再泛化为整个组织下所有仓库
 - 当前 donation 基线已被重新定义为 `0.001%`，这比之前代码中的 `0.01%` 更严格，也会抬高因 dust 阈值导致的最小可发送金额门槛
+
+2026-03-30 `skydogehash` 参数对齐排查进展（当前轮）：
+
+- 已直接核对 `skydogenet/mainchain` 的 `master` 与 `skydogehash` 分支源码，重点查看 `src/chainparams.cpp`、`src/chainparamsbase.cpp` 和 `src/rpc/client.cpp`
+- 已确认 `master` 与 `skydogehash` 的 RPC 参数转换表基本一致，钱包当前依赖的 `getblockchaininfo`、`gettransaction`、`getrawtransaction`、`listunspent`、`sendrawtransaction` 等基础 RPC 不存在明显分叉
+- 已确认真正影响第三方钱包兼容的关键差异主要集中在 `skydogehash` 的 testnet 链参数：`defaultPort` 从旧线的 `19243` 变为 `18441`，而 testnet RPC 仍保持 `18332`
+- 已确认 `skydogehash` 的 testnet 地址前缀被刻意改成与 mainnet 一致：`PUBKEY_ADDRESS=0`、`SCRIPT_ADDRESS=5`、`SECRET_KEY=128`、`EXT_PUBLIC_KEY=0488B21E`、`EXT_SECRET_KEY=0488ADE4`、`bech32_hrp=bc`
+- 这意味着如果我们继续沿用旧式 testnet 前缀 `m/n/2/tb1` 与旧式 WIF / xpub 前缀，就会和 `skydogehash` 最新 testnet 规则产生偏差，特别是在地址校验、找零地址生成、WIF 导入和 testnet donation 输出上
+- 已据此把 Flutter 钱包的 testnet 链配置切到与 `skydogehash` 一致，并放宽网络校验逻辑，使 testnet 环境同时接受新版主网式前缀和旧式 testnet 前缀，减少过渡期兼容风险
+- 已同步修正默认文案，明确 `18332` 是 testnet RPC 端口，而 `18441` 是 testnet P2P 端口，避免用户在自定义节点设置里把 P2P 端口误填成 RPC
+
+本轮结论：
+
+- 对“兼容 `mainchain` 最新版本”而言，当前最值得跟随的是 `skydogehash` 的链参数，而不是仓库里更旧的 `master` testnet 前缀定义
+- 当前钱包的 testnet 兼容策略已从“只接受传统 testnet 地址”升级为“优先兼容 `skydogehash` 新规则，同时兼容旧前缀输入”，这更适合第三方钱包过渡期接入
 
 注意：
 

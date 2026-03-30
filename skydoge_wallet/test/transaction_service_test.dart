@@ -172,21 +172,21 @@ void main() {
     );
   });
 
-  test('buildPreview uses testnet donation address on testnet service', () {
+  test('buildPreview uses latest testnet-compatible donation address on testnet service', () {
     final testnetService = TransactionService(
       rpcService: RpcService(config: NetworkConfig.testnet()),
       addressService: addressService,
     );
 
     final preview = testnetService.buildPreview(
-      toAddress: 'mqcLvjMSC927erejtAw6w7k8tBB9hm3Ann',
+      toAddress: '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc',
       sendAmount: 1000,
       donationAmount: 546,
       fee: 100,
       changeAmount: 0,
     );
 
-    expect(preview.donationAddress, 'mqcLvjMSC927erejtAw6w7k8tBB9hm3Ann');
+    expect(preview.donationAddress, '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc');
     expect(preview.network, 'testnet');
   });
 

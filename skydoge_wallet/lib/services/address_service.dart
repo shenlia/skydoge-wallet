@@ -208,7 +208,7 @@ class AddressService {
 
     final first = wif[0];
     if (isTestnet) {
-      return first == '9' || first == 'c';
+      return first == '5' || first == 'K' || first == 'L' || first == '9' || first == 'c';
     }
     return first == '5' || first == 'K' || first == 'L';
   }

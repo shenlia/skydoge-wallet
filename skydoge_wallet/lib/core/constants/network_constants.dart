@@ -15,6 +15,7 @@ class NetworkConstants {
 
   static const String mainnetExplorerApi = 'http://explorer.skydoge.net';
   static const String testnetExplorerApi = 'http://testnet.explorer.skydoge.net';
+  static const int testnetP2pPort = 18441;
 
   static const int coin = 100000000;
   static const int maxFee = 100000000;

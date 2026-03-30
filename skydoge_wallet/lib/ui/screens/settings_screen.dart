@@ -439,7 +439,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Port',
-                  hintText: '8332 (mainnet RPC) or 18332 (testnet RPC)',
+                  hintText: '8332 (mainnet RPC) or 18332 (testnet RPC), not P2P 18441',
                   prefixIcon: Icon(Icons.numbers),
                 ),
               ),

@@ -16,13 +16,17 @@ void main() {
     expect(wallet.receivingAddress.startsWith('1'), true);
   });
 
-  test('testnet wallet derivation returns testnet address', () async {
+  test('testnet wallet derivation returns address compatible with latest testnet rules', () async {
     const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
     final wallet = await service.deriveWallet(mnemonic, isTestnet: true);
-    expect(wallet.receivingAddress.startsWith('m') || wallet.receivingAddress.startsWith('n'), true);
+    expect(
+      wallet.receivingAddress.startsWith('1') || wallet.receivingAddress.startsWith('m') || wallet.receivingAddress.startsWith('n'),
+      true,
+    );
   });
 
   test('validateAddress accepts testnet legacy and bech32 prefixes', () {
+    expect(service.validateAddress('1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc'), true);
     expect(service.validateAddress('mkHS9ne12qx9pS9VojpwU5xtRd4T7X7ZUt'), true);
     expect(service.validateAddress('n2eMqTT929pb1RDNuqEnxdaLau1rxy3efi'), true);
     expect(service.validateAddress('2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br'), true);
@@ -33,6 +37,7 @@ void main() {
   });
 
   test('ui validator accepts testnet legacy and bech32 prefixes', () {
+    expect(Validators.isValidSkydogeAddress('1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc'), true);
     expect(Validators.isValidSkydogeAddress('mkHS9ne12qx9pS9VojpwU5xtRd4T7X7ZUt'), true);
     expect(Validators.isValidSkydogeAddress('2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br'), true);
     expect(
@@ -70,7 +75,7 @@ void main() {
       isTestnet: true,
     );
 
-    expect(address, 'mqcLvjMSC927erejtAw6w7k8tBB9hm3Ann');
+    expect(address, '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc');
   });
 
   test('can import wallet from WIF', () async {

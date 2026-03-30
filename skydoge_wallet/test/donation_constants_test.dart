@@ -18,7 +18,7 @@ void main() {
     );
     expect(
       DonationConstants.donationAddressForNetwork(true),
-      DonationConstants.testnetDonationAddress,
+      DonationConstants.mainnetDonationAddress,
     );
   });
 }

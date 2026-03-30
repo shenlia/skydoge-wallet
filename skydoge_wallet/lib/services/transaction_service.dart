@@ -440,7 +440,10 @@ class TransactionService {
 
   bool _isAddressCompatibleWithCurrentNetwork(String address) {
     if (_rpcService.isTestnet) {
-      return address.startsWith('m') ||
+      return address.startsWith('1') ||
+          address.startsWith('3') ||
+          address.startsWith('bc1') ||
+          address.startsWith('m') ||
           address.startsWith('n') ||
           address.startsWith('2') ||
           address.startsWith('tb1');

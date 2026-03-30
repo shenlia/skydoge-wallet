@@ -137,6 +137,15 @@ gh release upload v{x.x.x} build/app/outputs/flutter-apk/app-debug.apk --repo sh
   - 每次交易保留 `0.001%` 捐赠到该地址作为技术服务费
   - 后续方案设计、检查修复和发版都以兼容 `https://github.com/skydogenet/mainchain` 最新版本为主目标
 
+[mainchain 最新 testnet 参数知识]
+- Date: 2026-03-30
+- Context: Agent 在对齐 `skydogenet/mainchain` 的 `skydogehash` 分支时发现
+- Category: 依赖关系
+- Instructions:
+  - `skydogehash` 分支的 testnet P2P 端口为 `18441`，但 testnet RPC 仍为 `18332`
+  - `skydogehash` 分支把 testnet 地址前缀改成与 mainnet 一致：P2PKH=`1`，P2SH=`3`，bech32 HRP=`bc`
+  - 第三方钱包若要兼容最新 testnet，地址校验和链参数不能只沿用传统 `m/n/2/tb1` 规则
+
 ---
 
 ## 示例：如何备注更新需求
