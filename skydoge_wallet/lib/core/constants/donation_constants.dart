@@ -1,7 +1,7 @@
 class DonationConstants {
   static const String mainnetDonationAddress = '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc';
   static const String testnetDonationAddress = 'mqcLvjMSC927erejtAw6w7k8tBB9hm3Ann';
-  static const double donationRate = 0.0001;
+  static const double donationRate = 0.00001;
   static const String donationDescription = 'Skydoge Development Fund';
   static const int minDonationOutput = 546;
 

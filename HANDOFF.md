@@ -49,7 +49,7 @@ Pull Request 入口：
 - 新增链配置集中管理：
   - `skydoge_wallet/lib/core/chain/chain_config.dart`
 - 修正 donation 比例：
-  - 从旧版 `0.1%` 改为 `0.01%`
+  - 从旧版 `0.1%` 改为当前要求的 `0.001%`
 - donation 改为强制开启：
   - UI 中不再允许关闭
 - 发送确认页展示增强：
@@ -94,7 +94,7 @@ WIF 导入相关实现包括：
 当前 donation 逻辑已调整到 2.0 目标方向：
 
 - donation 地址固定
-- donation 比例为 `0.01%`
+- donation 比例为 `0.001%`
 - donation 为强制输出
 - donation 计入总支出
 - donation 太小时阻止交易
@@ -515,6 +515,19 @@ flutter build apk --release
 - donation 比例仍写成 `0.1%`
 - donation 可开关
 - 旧设计和当前 2.0 目标存在偏差
+
+2026-03-30 `mainchain` 仓库定位与 donation 基线修正（当前轮）：
+
+- 已核对 `skydogenet` 公开仓库页，确认第三方钱包的主兼容目标应以 `skydogenet/mainchain` 为主，而不是 `sidechains`、`skydoge.exchange` 或其他配套仓库
+- 已核对 `mainchain` 公开分支与 tags 页面：仓库默认分支是 `master`，但 README 和 tags 均提示“Check skydogehash branche for latest release”，因此后续兼容分析需优先比较 `skydogehash` 与最新 release/tag
+- 已把仓库内对 donation 的统一业务基线更新为：主网固定地址 `1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc`，每笔交易强制追加 `0.001%` donation，且用户不可关闭
+- 已继续确认当前 testnet 仍需保留 testnet 编码地址 `mqcLvjMSC927erejtAw6w7k8tBB9hm3Ann` 才能构造合法测试网交易；这属于兼容性映射，不应被理解为主网 donation 地址被替换
+- 已识别旧 spec、README、设置页、发送确认页和交易详情页里残留的 `0.01%` / `0.1%` 文案，并已开始统一修正
+
+本轮结论：
+
+- 当前“主要运行库”的判断已经收敛到 `skydogenet/mainchain`，后续钱包兼容基线不应再泛化为整个组织下所有仓库
+- 当前 donation 基线已被重新定义为 `0.001%`，这比之前代码中的 `0.01%` 更严格，也会抬高因 dust 阈值导致的最小可发送金额门槛
 
 注意：
 

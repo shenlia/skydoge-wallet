@@ -42,7 +42,7 @@
     - 状态管理: Initial / Loading / Loaded / Locked / Error
   - [ ] 4.2 实现 TransactionBloc
     - BuildTransaction / SignTransaction / BroadcastTransaction events
-    - 0.1% 手续费计算集成
+    - 0.001% 强制捐赠计算集成
     - 状态管理: Ready / Built / Broadcasted / Error
   - [ ] 4.3 实现 NetworkBloc
     - 网络切换 (mainnet/testnet)
@@ -57,7 +57,7 @@
     - 收款地址输入 (支持扫码)
     - 金额输入
     - 手续费选择 (low/medium/high)
-    - 0.1% 捐赠功能开关和显示
+    - 0.001% 强制捐赠展示
     - 交易确认对话框
   - [ ] 5.3 实现 ReceiveScreen (收款页)
     - 收款地址 QR 码显示
@@ -65,22 +65,22 @@
   - [ ] 5.4 实现 SettingsScreen (设置页)
     - 网络切换 (Mainnet/Testnet)
     - 生物识别认证开关
-    - 捐赠功能开关
+    - 强制捐赠规则展示
     - 钱包备份 (显示助记词)
   - [ ] 5.5 实现 SidechainScreen (侧链页)
     - 侧链余额显示
     - 跨链充值/提现操作
 
-- [ ] 6. 0.1% 手续费功能实现
+- [ ] 6. 0.001% 强制捐赠功能实现
   - [ ] 6.1 创建 DonationCalculator 工具类
-    - 硬编码捐赠地址: SfeeAddressForDonation1234567890abcd
-    - 计算 0.1% 手续费
-    - 计算收款方实际收到金额
+    - 硬编码主网捐赠地址: 1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc
+    - 计算 0.001% 捐赠金额
+    - 计算交易总支出
   - [ ] 6.2 集成 DonationCalculator 到 TransactionBloc
     - 在 BuildTransaction 时自动计算捐赠金额
     - 在交易确认对话框中显示捐赠详情
-  - [ ] 6.3 添加捐赠开关到 SettingsScreen
-    - 支持用户启用/禁用捐赠功能
+  - [ ] 6.3 在 SettingsScreen 展示强制捐赠规则
+    - 明确显示捐赠地址与固定费率
 
 - [ ] 7. 检查点 - 基础功能验证
   - 确保项目可以编译运行

@@ -27,7 +27,7 @@
 | 配置项 | 值 |
 |--------|-----|
 | 捐赠地址 | 1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc |
-| 捐赠费率 | 0.01% |
+| 捐赠费率 | 0.001% |
 | 默认RPC | pool.skydoge.net:8332 |
 | 包名 | com.skydoge.skydoge_wallet |
 
@@ -97,7 +97,7 @@ gh release upload v{x.x.x} build/app/outputs/flutter-apk/app-debug.apk --repo sh
 - Context: Agent 在执行 Skydoge Wallet 2.0 对齐开发时发现
 - Category: 代码模式
 - Instructions:
-  - donation 规则已从旧版 0.1% 调整为 0.01%，并且在发送流程中强制开启
+  - donation 规则已从旧版 0.1% 调整为 0.001%，并且在发送流程中强制开启
   - 当前主开发分支为 `260329-feat-align-skydoge-wallet-v2`
   - 已实现 WIF 导入和 P2PKH 本地签名主干，但仍需优先做 testnet 广播验证
 
@@ -145,7 +145,7 @@ gh release upload v{x.x.x} build/app/outputs/flutter-apk/app-debug.apk --repo sh
 
 ```
 更新 Skydoge Wallet：
-- 修改捐赠费率从 0.1% 改为 0.01%
+- 修改捐赠费率从 0.1% 改为 0.001%
 - 期望版本：v1.1.0
 ```
 

@@ -126,7 +126,7 @@ class TransactionDetailScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'This transaction contains the mandatory 0.01% Skydoge donation output.',
+                        'This transaction contains the mandatory 0.001% Skydoge donation output.',
                         style: TextStyle(color: Colors.grey[300]),
                       ),
                     ),

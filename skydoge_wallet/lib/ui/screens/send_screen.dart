@@ -90,7 +90,7 @@ class _SendScreenState extends State<SendScreen> {
             _buildDetailRow('Amount:', Formatters.formatSatoshis(preview.sendAmount)),
             const SizedBox(height: 8),
             _buildDetailRow(
-              'Donation (0.01%):',
+              'Donation (0.001%):',
               Formatters.formatSatoshis(preview.donationAmount),
               valueColor: AppTheme.accentColor,
             ),
@@ -253,7 +253,7 @@ class _SendScreenState extends State<SendScreen> {
                 const SizedBox(height: 24),
                 Card(
                   child: ListTile(
-                    title: const Text('Mandatory 0.01% Donation'),
+                    title: const Text('Mandatory 0.001% Donation'),
                     subtitle: Text(
                       'Every transfer includes an on-chain donation output\nDonation address: ${Formatters.formatAddress(DonationConstants.donationAddressForNetwork((context.read<WalletBloc>().state as WalletLoaded).isTestnet))}',
                       style: TextStyle(fontSize: 12, color: Colors.grey[400]),

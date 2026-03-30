@@ -13,7 +13,7 @@ Skydoge Mobile Wallet 是一款基于 Flutter 的跨平台移动钱包应用，�
 graph TB
     subgraph "UI Layer"
         HomeScreen["Home Screen<br/>(Balance & Transactions)"]
-        SendScreen["Send Screen<br/>(Transfer & 0.1% Fee)"]
+        SendScreen["Send Screen<br/>(Transfer & Mandatory 0.001% Donation)"]
         ReceiveScreen["Receive Screen<br/>(QR Code & Address)"]
         SettingsScreen["Settings Screen<br/>(Network & Security)"]
         SidechainScreen["Sidechain Screen<br/>(Cross-Chain)"]
@@ -97,7 +97,7 @@ class BuildTransaction extends TransactionEvent {
   final String toAddress;
   final int amount;
   final int feeRate;
-  final bool includeDonation; // 0.1% fee toggle
+  final bool includeDonation; // always true for mandatory donation flow
 }
 class SignTransaction extends TransactionEvent { final Transaction tx; }
 class BroadcastTransaction extends TransactionEvent { final String signedHex; }
@@ -154,7 +154,7 @@ Responsibility: 交易构建与签名
 
 ```dart
 class TransactionService {
-  // Build a transaction with optional 0.1% donation
+  // Build a transaction with mandatory 0.001% donation
   Future<Transaction> buildTransaction({
     required String toAddress,
     required int amount,
@@ -197,7 +197,7 @@ class Transaction {
   final List<TxOutput> outputs;
   final int locktime;
   final int fee;
-  final int donationFee;  // 0.1% of amount if enabled
+  final int donationFee;  // 0.001% of amount
   final bool isBroadcasted;
 }
 ```
@@ -208,21 +208,21 @@ class Transaction {
 class TxOutput {
   final String address;
   final int amount;      // in satoshis
-  final bool isDonation; // true if this is the 0.1% fee output
+  final bool isDonation; // true if this is the donation output
 }
 ```
 
-## 0.1% Donation Fee Implementation
+## 0.001% Donation Fee Implementation
 
 ```mermaid
 graph LR
-    A["User sends 1000 SKYDOGE"] --> B["Calculate 0.1% = 1 SKYDOGE"]
-    B --> C["Recipient gets 999 SKYDOGE"]
-    B --> D["Fee Address gets 1 SKYDOGE"]
+    A["User sends amount X"] --> B["Calculate 0.001% donation"]
+    B --> C["Recipient gets X"]
+    B --> D["Donation address gets extra output"]
     
     subgraph "Transaction Outputs"
-        C --> E["Output 1: Recipient<br/>999 SKYDOGE"]
-        D --> F["Output 2: Fee Address<br/>1 SKYDOGE (donation)"]
+        C --> E["Output 1: Recipient amount"]
+        D --> F["Output 2: Donation output"]
     end
 ```
 
@@ -230,8 +230,8 @@ graph LR
 
 ```dart
 class DonationCalculator {
-  static const String feeAddress = 'SfeeAddressForDonation1234567890abcd';
-  static const double donationRate = 0.001; // 0.1%
+  static const String feeAddress = '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc';
+  static const double donationRate = 0.00001; // 0.001%
 
   static int calculateDonationFee(int amount) {
     return (amount * donationRate).floor();
@@ -260,7 +260,7 @@ class DonationCalculator {
 
 - `AddressService`: Mnemonic generation, address derivation, address validation
 - `TransactionService`: Fee calculation, donation calculation, transaction building
-- `DonationCalculator`: 0.1% calculation accuracy
+- `DonationCalculator`: 0.001% calculation accuracy
 
 ### Integration Tests
 
