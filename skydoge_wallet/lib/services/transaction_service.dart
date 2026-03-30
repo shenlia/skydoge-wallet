@@ -30,6 +30,10 @@ class TransactionService {
       throw TransactionException('Invalid recipient address');
     }
 
+    if (!_addressService.validateAddress(fromAddress)) {
+      throw TransactionException('Invalid change address');
+    }
+
     if (feeRate < TransactionConstants.minFeeRate || feeRate > TransactionConstants.maxFeeRate) {
       throw TransactionException('Invalid fee rate');
     }
@@ -93,14 +97,17 @@ class TransactionService {
 
     final estimatedSize = _estimateTransactionSize(inputs.length, outputs.length + 1);
     final actualFee = estimatedSize * feeRate;
+    var effectiveFee = actualFee;
     final change = selectedAmount - amount - donationFee - actualFee;
-    if (change > 0) {
+    if (change >= DonationConstants.minDonationOutput) {
       outputs.add(TxOutput(
         address: fromAddress,
         amount: change,
         index: outputs.length,
         isDonation: false,
       ));
+    } else if (change > 0) {
+      effectiveFee += change;
     }
 
     final rawTx = _serializeUnsignedTransaction(
@@ -112,7 +119,7 @@ class TransactionService {
       rawHex: rawTx,
       inputs: inputs,
       outputs: outputs,
-      fee: actualFee,
+      fee: effectiveFee,
       donationFee: donationFee,
       network: _rpcService.isTestnet ? 'testnet' : 'mainnet',
     );
@@ -264,7 +271,7 @@ class TransactionService {
     bytes.addAll(_varInt(outputs.length));
     for (final output in outputs) {
       bytes.addAll(_uint64LE(output.amount));
-      final scriptPubKey = _scriptPubKeyForAddress(output.address);
+      final scriptPubKey = _outputScriptForAddress(output.address);
       bytes.addAll(_varInt(scriptPubKey.length));
       bytes.addAll(scriptPubKey);
     }
@@ -296,7 +303,7 @@ class TransactionService {
     bytes.addAll(_varInt(outputs.length));
     for (final output in outputs) {
       bytes.addAll(_uint64LE(output.amount));
-      final scriptPubKey = _scriptPubKeyForAddress(output.address);
+      final scriptPubKey = _outputScriptForAddress(output.address);
       bytes.addAll(_varInt(scriptPubKey.length));
       bytes.addAll(scriptPubKey);
     }
@@ -355,13 +362,21 @@ class TransactionService {
     return Uint8List.fromList(bytes);
   }
 
-  List<int> _scriptPubKeyForAddress(String address) {
+  List<int> _outputScriptForAddress(String address) {
+    if (address.startsWith('bc1') || address.startsWith('tb1')) {
+      throw TransactionException('Bech32 outputs are not yet supported for local signing');
+    }
+
     final decoded = _base58Decode(address);
     if (decoded.length < 25) {
       throw TransactionException('Unsupported address format for local signing');
     }
 
     final hash160 = decoded.sublist(1, 21);
+    if (address.startsWith('3') || address.startsWith('2')) {
+      return [0xa9, 0x14, ...hash160, 0x87];
+    }
+
     return [0x76, 0xa9, 0x14, ...hash160, 0x88, 0xac];
   }
 
