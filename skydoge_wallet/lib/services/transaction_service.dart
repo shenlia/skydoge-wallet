@@ -44,7 +44,13 @@ class TransactionService {
       throw TransactionException('Invalid fee rate');
     }
 
-    final utxos = await _rpcService.listUnspent();
+    List<Utxo> utxos;
+    try {
+      utxos = await _rpcService.listUnspent();
+    } on RpcException catch (e) {
+      throw TransactionException('Failed to fetch spendable UTXOs: ${e.message}');
+    }
+
     final eligibleUtxos = utxos.where(
       (utxo) =>
           utxo.confirmations >= minConfirmations &&

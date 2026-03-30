@@ -203,19 +203,15 @@ class RpcService {
   }
 
   Future<List<Utxo>> listUnspent() async {
-    try {
-      final result = await call('listunspent', [0, 9999999]);
-      return (result as List).map((utxo) => Utxo(
-        txid: utxo['txid'] as String,
-        vout: utxo['vout'] as int,
-        amount: _parseSatoshis(utxo['amount']),
-        confirmations: utxo['confirmations'] as int,
-        scriptPubKey: utxo['scriptPubKey'] as String,
-        address: utxo['address'] as String,
-      )).toList();
-    } catch (e) {
-      return [];
-    }
+    final result = await call('listunspent', [0, 9999999]);
+    return (result as List).map((utxo) => Utxo(
+      txid: utxo['txid'] as String,
+      vout: utxo['vout'] as int,
+      amount: _parseSatoshis(utxo['amount']),
+      confirmations: utxo['confirmations'] as int,
+      scriptPubKey: utxo['scriptPubKey'] as String,
+      address: utxo['address'] as String? ?? '',
+    )).toList();
   }
 
   int _parseSatoshis(dynamic value) {

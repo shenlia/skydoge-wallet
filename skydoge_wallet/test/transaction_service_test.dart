@@ -9,12 +9,20 @@ class FakeRpcService extends RpcService {
   FakeRpcService({
     required super.config,
     required this.utxos,
+    this.listUnspentError,
   });
 
   final List<Utxo> utxos;
+  final RpcException? listUnspentError;
 
   @override
-  Future<List<Utxo>> listUnspent() async => utxos;
+  Future<List<Utxo>> listUnspent() async {
+    if (listUnspentError != null) {
+      throw listUnspentError!;
+    }
+
+    return utxos;
+  }
 }
 
 void main() {
@@ -559,6 +567,37 @@ void main() {
           (error) => error.message,
           'message',
           contains('locally signable UTXOs'),
+        ),
+      ),
+    );
+  });
+
+  test('buildTransaction surfaces RPC listUnspent failure clearly', () async {
+    final ownerWallet = await addressService.deriveWallet(
+      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+    );
+    final fakeRpc = FakeRpcService(
+      config: NetworkConfig.mainnet(),
+      utxos: const [],
+      listUnspentError: RpcException('RPC Error: node unavailable'),
+    );
+    final buildService = TransactionService(
+      rpcService: fakeRpc,
+      addressService: addressService,
+    );
+
+    await expectLater(
+      buildService.buildTransaction(
+        toAddress: '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc',
+        amount: 1000000,
+        fromAddress: ownerWallet.receivingAddress,
+        feeRate: 2,
+      ),
+      throwsA(
+        isA<TransactionException>().having(
+          (error) => error.message,
+          'message',
+          contains('Failed to fetch spendable UTXOs'),
         ),
       ),
     );
