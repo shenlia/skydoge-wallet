@@ -31,11 +31,13 @@ class TransactionService {
     if (!_addressService.validateAddress(toAddress)) {
       throw TransactionException('Invalid recipient address');
     }
+    _assertAddressMatchesCurrentNetwork(toAddress);
     _assertSupportedOutputAddress(toAddress);
 
     if (!_addressService.validateAddress(fromAddress)) {
       throw TransactionException('Invalid change address');
     }
+    _assertAddressMatchesCurrentNetwork(fromAddress);
     _assertSupportedOutputAddress(fromAddress);
 
     if (feeRate < TransactionConstants.minFeeRate || feeRate > TransactionConstants.maxFeeRate) {
@@ -195,7 +197,12 @@ class TransactionService {
         throw TransactionException('Unsupported input scriptPubKey for local signing');
       }
 
-      if (input.address.isNotEmpty && input.address != expectedAddress) {
+      final resolvedAddress = _resolveInputAddress(input.address, input.scriptPubKey);
+      if (resolvedAddress == null) {
+        throw TransactionException('Unable to resolve input address for local signing');
+      }
+
+      if (resolvedAddress != expectedAddress) {
         throw TransactionException(
           'Input address does not match the locally held private key',
         );
@@ -397,12 +404,20 @@ class TransactionService {
     }
 
     final resolvedAddress = _resolveInputAddress(utxo.address, utxo.scriptPubKey);
-    return resolvedAddress != null && resolvedAddress == fromAddress;
+    return resolvedAddress != null &&
+        _isAddressCompatibleWithCurrentNetwork(resolvedAddress) &&
+        resolvedAddress == fromAddress;
   }
 
   void _assertSupportedOutputAddress(String address) {
     if (address.startsWith('bc1') || address.startsWith('tb1')) {
       throw TransactionException('Bech32 outputs are not yet supported for local signing');
+    }
+  }
+
+  void _assertAddressMatchesCurrentNetwork(String address) {
+    if (!_isAddressCompatibleWithCurrentNetwork(address)) {
+      throw TransactionException('Address does not match the active network');
     }
   }
 
@@ -415,6 +430,19 @@ class TransactionService {
       scriptPubKey,
       isTestnet: _rpcService.isTestnet,
     );
+  }
+
+  bool _isAddressCompatibleWithCurrentNetwork(String address) {
+    if (_rpcService.isTestnet) {
+      return address.startsWith('m') ||
+          address.startsWith('n') ||
+          address.startsWith('2') ||
+          address.startsWith('tb1');
+    }
+
+    return address.startsWith('1') ||
+        address.startsWith('3') ||
+        address.startsWith('bc1');
   }
 
   Uint8List _base58Decode(String encoded) {

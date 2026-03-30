@@ -458,4 +458,109 @@ void main() {
     expect(unsigned.inputs, hasLength(1));
     expect(unsigned.inputs.first.address, isEmpty);
   });
+
+  test('buildTransaction rejects recipient from wrong network', () async {
+    final ownerWallet = await addressService.deriveWallet(
+      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+    );
+    final fakeRpc = FakeRpcService(
+      config: NetworkConfig.mainnet(),
+      utxos: [
+        Utxo(
+          txid: 'aa' * 32,
+          vout: 0,
+          amount: 5000000,
+          confirmations: 6,
+          scriptPubKey: '76a914d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa88ac',
+          address: ownerWallet.receivingAddress,
+        ),
+      ],
+    );
+    final buildService = TransactionService(
+      rpcService: fakeRpc,
+      addressService: addressService,
+    );
+
+    await expectLater(
+      buildService.buildTransaction(
+        toAddress: 'mqcLvjMSC927erejtAw6w7k8tBB9hm3Ann',
+        amount: 1000000,
+        fromAddress: ownerWallet.receivingAddress,
+        feeRate: 2,
+      ),
+      throwsA(
+        isA<TransactionException>().having(
+          (error) => error.message,
+          'message',
+          contains('active network'),
+        ),
+      ),
+    );
+  });
+
+  test('buildTransaction rejects change address from wrong network', () async {
+    final fakeRpc = FakeRpcService(
+      config: NetworkConfig.mainnet(),
+      utxos: const [],
+    );
+    final buildService = TransactionService(
+      rpcService: fakeRpc,
+      addressService: addressService,
+    );
+
+    await expectLater(
+      buildService.buildTransaction(
+        toAddress: '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc',
+        amount: 1000000,
+        fromAddress: 'mqcLvjMSC927erejtAw6w7k8tBB9hm3Ann',
+        feeRate: 2,
+      ),
+      throwsA(
+        isA<TransactionException>().having(
+          (error) => error.message,
+          'message',
+          contains('active network'),
+        ),
+      ),
+    );
+  });
+
+  test('buildTransaction ignores UTXO whose resolved address mismatches active network', () async {
+    final ownerWallet = await addressService.deriveWallet(
+      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+    );
+    final fakeRpc = FakeRpcService(
+      config: NetworkConfig.mainnet(),
+      utxos: [
+        const Utxo(
+          txid: 'bb' * 32,
+          vout: 0,
+          amount: 5000000,
+          confirmations: 6,
+          scriptPubKey: '76a9146eb63aedd0ab8d64ac745306ac8b8d4699a04fbc88ac',
+          address: '',
+        ),
+      ],
+    );
+    final buildService = TransactionService(
+      rpcService: fakeRpc,
+      addressService: addressService,
+    );
+
+    await expectLater(
+      buildService.buildTransaction(
+        toAddress: '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc',
+        amount: 1000000,
+        fromAddress: ownerWallet.receivingAddress,
+        feeRate: 2,
+      ),
+      throwsA(
+        isA<TransactionException>().having(
+          (error) => error.message,
+          'message',
+          contains('locally signable UTXOs'),
+        ),
+      ),
+    );
+  });
 }

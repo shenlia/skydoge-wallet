@@ -388,6 +388,18 @@ WIF 导入相关实现包括：
 - 当前本地签名对节点 `listunspent` 返回格式的鲁棒性更强，即使缺少 `address` 字段，只要 `scriptPubKey` 足够标准，仍可继续构造交易
 - 但这仍只覆盖标准 P2PKH 脚本；如果节点返回的是 P2SH、segwit 或更复杂脚本，当前仍会被显式排除
 
+2026-03-30 网络一致性前置校验进展（当前轮）：
+
+- 已继续补强地址与网络的一致性检查，发现此前虽然 donation 地址已按网络切换，但 `buildTransaction(...)` 对收款地址、找零地址以及从 `scriptPubKey` 回推得到的输入地址还没有统一做 active network 校验
+- 已新增 active network 约束：mainnet 仅接受 `1`/`3`/`bc1` 前缀，testnet 仅接受 `m`/`n`/`2`/`tb1` 前缀；若地址与当前节点网络不匹配，会直接报错 `Address does not match the active network`
+- 已把输入签名阶段也改为统一使用“解析后的输入地址”做归属校验，避免 `address` 缺失时绕过一致性检查
+- 已补充测试，覆盖主网下错误 testnet 收款地址、错误 testnet 找零地址，以及通过 `scriptPubKey` 反推后仍与当前网络不匹配的 UTXO 被过滤的场景
+
+本轮结论：
+
+- 当前交易构造在进入 UTXO 选择和签名前，就会更早阻止 mainnet/testnet 地址混用，跨网误构造风险进一步降低
+- 但 bech32 输出仍未真正支持；当前对 `bc1`/`tb1` 的处理仍是“网络前缀可识别，但本地签名输出阶段会显式拒绝”
+
 ---
 
 ### 6. 构建验证缺口
