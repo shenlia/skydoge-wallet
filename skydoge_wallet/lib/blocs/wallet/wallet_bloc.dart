@@ -225,9 +225,12 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
         balance: balance,
         transactions: transactions,
         isTestnet: currentState.isTestnet,
+        warningMessage: null,
       ));
     } catch (e) {
-      emit(WalletError(message: 'Failed to refresh balance: $e'));
+      emit(currentState.copyWith(
+        warningMessage: 'Refresh failed: $e',
+      ));
     }
   }
 
@@ -250,20 +253,23 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
         network: event.isTestnet ? 1 : 0,
       );
 
-      await _secureStorageService.saveWalletData(updatedWallet.toJson());
-
       _initRpcService(event.isTestnet);
       final balance = await _rpcService!.getWalletBalance();
       final transactions = await _rpcService!.listTransactions(50);
+
+      await _secureStorageService.saveWalletData(updatedWallet.toJson());
 
       emit(WalletLoaded(
         wallet: updatedWallet,
         balance: balance,
         transactions: transactions,
         isTestnet: event.isTestnet,
+        warningMessage: null,
       ));
     } catch (e) {
-      emit(WalletError(message: 'Failed to switch network: $e'));
+      emit(currentState.copyWith(
+        warningMessage: 'Network switch failed: $e',
+      ));
     }
   }
 

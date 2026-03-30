@@ -39,16 +39,35 @@ class WalletLoaded extends WalletState {
   final WalletBalance balance;
   final List<models.Transaction> transactions;
   final bool isTestnet;
+  final String? warningMessage;
 
   const WalletLoaded({
     required this.wallet,
     required this.balance,
     required this.transactions,
     required this.isTestnet,
+    this.warningMessage,
   });
 
+  WalletLoaded copyWith({
+    Wallet? wallet,
+    WalletBalance? balance,
+    List<models.Transaction>? transactions,
+    bool? isTestnet,
+    String? warningMessage,
+    bool clearWarningMessage = false,
+  }) {
+    return WalletLoaded(
+      wallet: wallet ?? this.wallet,
+      balance: balance ?? this.balance,
+      transactions: transactions ?? this.transactions,
+      isTestnet: isTestnet ?? this.isTestnet,
+      warningMessage: clearWarningMessage ? null : warningMessage ?? this.warningMessage,
+    );
+  }
+
   @override
-  List<Object?> get props => [wallet, balance, transactions, isTestnet];
+  List<Object?> get props => [wallet, balance, transactions, isTestnet, warningMessage];
 }
 
 class WalletLocked extends WalletState {

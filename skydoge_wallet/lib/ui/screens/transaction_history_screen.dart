@@ -38,15 +38,31 @@ class TransactionHistoryScreen extends StatelessWidget {
           final donationCount = transactions.where((tx) => tx.isDonation).length;
 
           if (transactions.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
+                padding: const EdgeInsets.all(32),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.receipt_long, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
+                    if (state.warningMessage != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.warningColor.withOpacity(0.16),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.warningColor.withOpacity(0.35)),
+                        ),
+                        child: Text(
+                          state.warningMessage!,
+                          style: const TextStyle(color: AppTheme.warningColor),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    const Text(
                       'No transactions found yet',
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -65,37 +81,58 @@ class TransactionHistoryScreen extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSummaryChip(
-                        icon: Icons.swap_horiz,
-                        label: '${transactions.length} total',
-                        color: AppTheme.primaryColor,
-                      ),
-                      _buildSummaryChip(
-                        icon: Icons.arrow_downward,
-                        label: '$incomingCount received',
-                        color: AppTheme.successColor,
-                      ),
-                      _buildSummaryChip(
-                        icon: Icons.arrow_upward,
-                        label: '$outgoingCount sent',
-                        color: AppTheme.errorColor,
-                      ),
-                      if (donationCount > 0)
-                        _buildSummaryChip(
-                          icon: Icons.volunteer_activism,
-                          label: '$donationCount donation',
-                          color: AppTheme.accentColor,
+                      if (state.warningMessage != null) ...[
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.warningColor.withOpacity(0.16),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.warningColor.withOpacity(0.35)),
+                          ),
+                          child: Text(
+                            state.warningMessage!,
+                            style: const TextStyle(color: AppTheme.warningColor),
+                          ),
                         ),
-                      _buildSummaryChip(
-                        icon: Icons.public,
-                        label: state.isTestnet ? 'Testnet' : 'Mainnet',
-                        color: state.isTestnet
-                            ? AppTheme.warningColor
-                            : AppTheme.primaryColor,
+                      ],
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildSummaryChip(
+                            icon: Icons.swap_horiz,
+                            label: '${transactions.length} total',
+                            color: AppTheme.primaryColor,
+                          ),
+                          _buildSummaryChip(
+                            icon: Icons.arrow_downward,
+                            label: '$incomingCount received',
+                            color: AppTheme.successColor,
+                          ),
+                          _buildSummaryChip(
+                            icon: Icons.arrow_upward,
+                            label: '$outgoingCount sent',
+                            color: AppTheme.errorColor,
+                          ),
+                          if (donationCount > 0)
+                            _buildSummaryChip(
+                              icon: Icons.volunteer_activism,
+                              label: '$donationCount donation',
+                              color: AppTheme.accentColor,
+                            ),
+                          _buildSummaryChip(
+                            icon: Icons.public,
+                            label: state.isTestnet ? 'Testnet' : 'Mainnet',
+                            color: state.isTestnet
+                                ? AppTheme.warningColor
+                                : AppTheme.primaryColor,
+                          ),
+                        ],
                       ),
                     ],
                   ),

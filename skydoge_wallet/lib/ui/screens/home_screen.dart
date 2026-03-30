@@ -78,7 +78,21 @@ class _HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<WalletBloc, WalletState>(
+    return BlocConsumer<WalletBloc, WalletState>(
+      listenWhen: (previous, current) =>
+          current is WalletLoaded &&
+          current.warningMessage != null &&
+          (previous is! WalletLoaded || previous.warningMessage != current.warningMessage),
+      listener: (context, state) {
+        if (state is WalletLoaded && state.warningMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.warningMessage!),
+              backgroundColor: AppTheme.warningColor,
+            ),
+          );
+        }
+      },
       builder: (context, state) {
         if (state is! WalletLoaded) {
           return const Center(child: CircularProgressIndicator());
@@ -122,36 +136,65 @@ class _HomeContent extends StatelessWidget {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    child: Column(
                       children: [
-                        _buildActionButton(
-                          context,
-                          icon: Icons.qr_code,
-                          label: 'Receive',
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ReceiveScreen(
-                                  address: wallet.receivingAddress,
+                        if (state.warningMessage != null)
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.warningColor.withOpacity(0.16),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppTheme.warningColor.withOpacity(0.35),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: AppTheme.warningColor),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    state.warningMessage!,
+                                    style: const TextStyle(color: AppTheme.warningColor),
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildActionButton(
-                          context,
-                          icon: Icons.send,
-                          label: 'Send',
-                          onTap: () {
-                            Navigator.push(
+                              ],
+                            ),
+                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildActionButton(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => const SendScreen(),
-                              ),
-                            );
-                          },
+                              icon: Icons.qr_code,
+                              label: 'Receive',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ReceiveScreen(
+                                      address: wallet.receivingAddress,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildActionButton(
+                              context,
+                              icon: Icons.send,
+                              label: 'Send',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SendScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),

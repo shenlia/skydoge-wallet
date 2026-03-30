@@ -425,6 +425,23 @@ WIF 导入相关实现包括：
 - 当前 `RpcService` 的关键读取路径更接近“失败即失败”，不会再轻易把节点错误伪装成空余额、空交易列表或空交易详情
 - 这会让上层在节点异常时更容易暴露问题，但也意味着后续可能需要在 UI/Bloc 层区分“空数据”和“节点失败”两种展示策略
 
+2026-03-30 WalletBloc 降级体验进展（当前轮）：
+
+- 已继续处理上层状态流转，发现 `RefreshBalanceEvent` 和 `SwitchNetworkEvent` 失败时此前会直接把页面打成 `WalletError`，导致用户丢失上一次成功加载的钱包数据
+- 已为 `WalletLoaded` 增加可选 `warningMessage`，用于在保留现有余额、地址和交易列表的同时标记“本次刷新/切网失败”
+- 已调整 `WalletBloc`：刷新失败时会保留当前 `WalletLoaded` 数据并附带 `Refresh failed: ...`；切网失败时会保留旧网络和旧数据并附带 `Network switch failed: ...`
+- 已调整切网流程的持久化顺序，只有在新网络余额和交易成功拉取后才保存新的 wallet 数据，避免“网络已经切过去但数据加载失败”时把本地状态写坏
+- 已在首页和交易历史页补充 warning banner 展示，让用户仍能查看旧数据，同时知道当前节点刷新失败
+
+本轮结论：
+
+- 当前节点异常时，钱包首页不再轻易从“已加载”掉回整体错误页，降级体验更平滑
+- 但设置页和其他依赖 `WalletLoaded` 的页面还没有统一消费 `warningMessage`；如果后续继续打磨，可把 warning 展示扩展到更多页面
+
+补充说明：
+
+- 本轮已补充 `wallet_state_test.dart`，至少把 `WalletLoaded.copyWith(...)` 的“保留数据 + 设置 warning / 清空 warning”行为固定下来，降低后续状态回归风险
+
 ---
 
 ### 6. 构建验证缺口
