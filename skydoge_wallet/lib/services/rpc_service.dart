@@ -100,49 +100,45 @@ class RpcService {
   }
 
   Future<int> getBalance(String address) async {
-    try {
-      final result = await call('getreceivedbyaddress', [address]);
-      return _parseSatoshis(result);
-    } catch (e) {
-      return 0;
-    }
+    final result = await call('getreceivedbyaddress', [address]);
+    return _parseSatoshis(result);
   }
 
   Future<WalletBalance> getWalletBalance() async {
-    try {
-      final result = await call('getwalletinfo');
-      return WalletBalance(
-        confirmed: _parseSatoshis(result['balance']),
-        unconfirmed: _parseSatoshis(result['unconfirmed_balance']),
-        immature: _parseSatoshis(result['immature_balance']),
-        sidechain: 0,
-      );
-    } catch (e) {
-      return const WalletBalance(
-        confirmed: 0,
-        unconfirmed: 0,
-        immature: 0,
-        sidechain: 0,
-      );
+    final result = await call('getwalletinfo');
+    if (result is! Map<String, dynamic>) {
+      throw RpcException('Invalid wallet info response shape');
     }
+
+    return WalletBalance(
+      confirmed: _parseSatoshis(result['balance']),
+      unconfirmed: _parseSatoshis(result['unconfirmed_balance']),
+      immature: _parseSatoshis(result['immature_balance']),
+      sidechain: 0,
+    );
   }
 
   Future<List<Transaction>> listTransactions(int count, {int skip = 0}) async {
-    try {
-      final result = await call('listtransactions', ['*', count, skip]);
-      return (result as List).map((tx) => _parseTransaction(tx)).toList();
-    } catch (e) {
-      return [];
+    final result = await call('listtransactions', ['*', count, skip]);
+    if (result is! List) {
+      throw RpcException('Invalid transactions response shape');
     }
+
+    return result.map((tx) {
+      if (tx is! Map<String, dynamic>) {
+        throw RpcException('Invalid transaction entry shape');
+      }
+      return _parseTransaction(tx);
+    }).toList();
   }
 
   Future<Transaction?> getTransaction(String txid) async {
-    try {
-      final result = await call('gettransaction', [txid]);
-      return _parseTransaction(result);
-    } catch (e) {
-      return null;
+    final result = await call('gettransaction', [txid]);
+    if (result is! Map<String, dynamic>) {
+      throw RpcException('Invalid transaction response shape');
     }
+
+    return _parseTransaction(result);
   }
 
   Future<String> sendToAddress(String address, double amount) async {
@@ -204,14 +200,24 @@ class RpcService {
 
   Future<List<Utxo>> listUnspent() async {
     final result = await call('listunspent', [0, 9999999]);
-    return (result as List).map((utxo) => Utxo(
-      txid: utxo['txid'] as String,
-      vout: utxo['vout'] as int,
-      amount: _parseSatoshis(utxo['amount']),
-      confirmations: utxo['confirmations'] as int,
-      scriptPubKey: utxo['scriptPubKey'] as String,
-      address: utxo['address'] as String? ?? '',
-    )).toList();
+    if (result is! List) {
+      throw RpcException('Invalid UTXO response shape');
+    }
+
+    return result.map((utxo) {
+      if (utxo is! Map<String, dynamic>) {
+        throw RpcException('Invalid UTXO entry shape');
+      }
+
+      return Utxo(
+        txid: utxo['txid'] as String,
+        vout: utxo['vout'] as int,
+        amount: _parseSatoshis(utxo['amount']),
+        confirmations: utxo['confirmations'] as int,
+        scriptPubKey: utxo['scriptPubKey'] as String,
+        address: utxo['address'] as String? ?? '',
+      );
+    }).toList();
   }
 
   int _parseSatoshis(dynamic value) {
