@@ -4,6 +4,8 @@ import '../../blocs/wallet/wallet_bloc.dart';
 import '../../blocs/wallet/wallet_event.dart';
 import '../../blocs/wallet/wallet_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/formatters.dart';
+import '../widgets/status_banner.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -19,6 +21,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   bool _isWifMode = false;
   bool _isTestnet = false;
   bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -28,20 +31,24 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   void _createWallet() {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     context.read<WalletBloc>().add(CreateWalletEvent(isTestnet: _isTestnet));
   }
 
   void _recoverWallet() {
     if (_isWifMode) {
       if (!Validators.isValidWif(_wifController.text.trim())) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a valid WIF private key')),
-        );
+        setState(() => _errorMessage = 'Please enter a valid WIF private key');
         return;
       }
 
-      setState(() => _isLoading = true);
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
       context.read<WalletBloc>().add(ImportWifWalletEvent(
         wif: _wifController.text.trim(),
         isTestnet: _isTestnet,
@@ -49,14 +56,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       return;
     }
 
-    if (_mnemonicController.text.trim().split(' ').length != 12) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid 12-word mnemonic')),
-      );
+    if (!Validators.isValidMnemonic(_mnemonicController.text.trim())) {
+      setState(() => _errorMessage = 'Please enter a valid 12-word mnemonic');
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     context.read<WalletBloc>().add(RecoverWalletEvent(
       mnemonic: _mnemonicController.text.trim(),
       isTestnet: _isTestnet,
@@ -70,12 +78,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         child: BlocListener<WalletBloc, WalletState>(
           listener: (context, state) {
             if (state is WalletError) {
-              setState(() => _isLoading = false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              setState(() {
+                _isLoading = false;
+                _errorMessage = state.message;
+              });
             } else if (state is WalletCreated) {
-              setState(() => _isLoading = false);
+              setState(() {
+                _isLoading = false;
+                _errorMessage = null;
+              });
             }
           },
           child: SingleChildScrollView(
@@ -108,6 +119,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 48),
+                if (_errorMessage != null) ...[
+                  StatusBanner(
+                    message: _errorMessage!,
+                    color: AppTheme.errorColor,
+                    icon: Icons.error_outline,
+                    margin: const EdgeInsets.only(bottom: 24),
+                  ),
+                ],
                 if (!_isRecoverMode) ...[
                   _buildOptionCard(
                     icon: Icons.add_circle_outline,
@@ -141,6 +160,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     TextField(
                       controller: _wifController,
                       maxLines: 2,
+                      onChanged: (_) {
+                        if (_errorMessage != null) {
+                          setState(() => _errorMessage = null);
+                        }
+                      },
                       decoration: const InputDecoration(
                         labelText: 'WIF Private Key',
                         hintText: 'Enter your WIF private key',
@@ -151,6 +175,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     TextField(
                       controller: _mnemonicController,
                       maxLines: 3,
+                      onChanged: (_) {
+                        if (_errorMessage != null) {
+                          setState(() => _errorMessage = null);
+                        }
+                      },
                       decoration: const InputDecoration(
                         labelText: 'Mnemonic Phrase',
                         hintText: 'Enter your 12-word mnemonic phrase',

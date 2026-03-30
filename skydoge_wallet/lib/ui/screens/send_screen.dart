@@ -8,6 +8,8 @@ import '../../blocs/transaction/transaction_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/donation_constants.dart';
 import '../../core/utils/formatters.dart';
+import '../widgets/status_banner.dart';
+import '../widgets/wallet_warning_banner.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -32,6 +34,8 @@ class _SendScreenState extends State<SendScreen> {
   void _buildTransaction() {
     final address = _addressController.text.trim();
     final amountText = _amountController.text.trim();
+
+    setState(() => _error = null);
 
     if (address.isEmpty) {
       setState(() => _error = 'Please enter a recipient address');
@@ -162,13 +166,37 @@ class _SendScreenState extends State<SendScreen> {
           }
         },
         builder: (context, state) {
+          final walletState = context.read<WalletBloc>().state;
+          final walletWarning = walletState is WalletLoaded
+              ? walletState.warningMessage
+              : null;
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (walletWarning != null) ...[
+                  WalletWarningBanner(
+                    message: walletWarning,
+                    margin: const EdgeInsets.only(bottom: 16),
+                  ),
+                ],
+                if (_error != null) ...[
+                  StatusBanner(
+                    message: _error!,
+                    color: AppTheme.errorColor,
+                    icon: Icons.error_outline,
+                    margin: const EdgeInsets.only(bottom: 16),
+                  ),
+                ],
                 TextField(
                   controller: _addressController,
+                  onChanged: (_) {
+                    if (_error != null) {
+                      setState(() => _error = null);
+                    }
+                  },
                   decoration: InputDecoration(
                     labelText: 'Recipient Address',
                     hintText: 'Enter Skydoge address or scan QR',
@@ -194,6 +222,9 @@ class _SendScreenState extends State<SendScreen> {
                     errorText: _error?.contains('amount') == true ? _error : null,
                   ),
                   onChanged: (value) {
+                    if (_error != null) {
+                      setState(() => _error = null);
+                    }
                     if (value.isNotEmpty) {
                       final amount = double.tryParse(value);
                       if (amount != null) {

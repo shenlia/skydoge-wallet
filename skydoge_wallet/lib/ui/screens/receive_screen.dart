@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../widgets/status_banner.dart';
 
 class ReceiveScreen extends StatelessWidget {
   final String address;
@@ -127,33 +128,11 @@ class ReceiveScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 32),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.warningColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.warningColor.withOpacity(0.3),
-                ),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: AppTheme.warningColor,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Only send SKYDOGE to this address. Sending other assets may result in permanent loss.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.warningColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            const StatusBanner(
+              message:
+                  'Only send SKYDOGE to this address. Sending other assets may result in permanent loss.',
+              color: AppTheme.warningColor,
+              icon: Icons.info_outline,
             ),
           ],
         ),
