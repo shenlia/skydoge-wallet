@@ -392,15 +392,29 @@ class TransactionService {
   }
 
   bool _isLocallySignableUtxo(Utxo utxo, {required String fromAddress}) {
-    return utxo.address.isNotEmpty &&
-        utxo.address == fromAddress &&
-        _isSupportedP2pkhInputScript(utxo.scriptPubKey);
+    if (!_isSupportedP2pkhInputScript(utxo.scriptPubKey)) {
+      return false;
+    }
+
+    final resolvedAddress = _resolveInputAddress(utxo.address, utxo.scriptPubKey);
+    return resolvedAddress != null && resolvedAddress == fromAddress;
   }
 
   void _assertSupportedOutputAddress(String address) {
     if (address.startsWith('bc1') || address.startsWith('tb1')) {
       throw TransactionException('Bech32 outputs are not yet supported for local signing');
     }
+  }
+
+  String? _resolveInputAddress(String address, String scriptPubKey) {
+    if (address.isNotEmpty) {
+      return address;
+    }
+
+    return _addressService.tryDeriveAddressFromScriptPubKey(
+      scriptPubKey,
+      isTestnet: _rpcService.isTestnet,
+    );
   }
 
   Uint8List _base58Decode(String encoded) {

@@ -241,6 +241,19 @@ class AddressService {
     return HEX.encode(ecPoint);
   }
 
+  String? tryDeriveAddressFromScriptPubKey(String scriptPubKey, {bool isTestnet = false}) {
+    if (scriptPubKey.length != 50 ||
+        !scriptPubKey.startsWith('76a914') ||
+        !scriptPubKey.endsWith('88ac')) {
+      return null;
+    }
+
+    final hash160Hex = scriptPubKey.substring(6, 46);
+    final hash160 = Uint8List.fromList(HEX.decode(hash160Hex));
+    final chain = isTestnet ? ChainConfig.testnet : ChainConfig.mainnet;
+    return _encodeP2PKH(hash160, version: chain.pubKeyHashPrefix);
+  }
+
   Uint8List _publicKeyFromPrivateKey(List<int> privateKeyBytes) {
     final domain = ECCurve_secp256k1();
     final point = domain.G * BigInt.parse(HEX.encode(privateKeyBytes), radix: 16);

@@ -50,6 +50,29 @@ void main() {
     expect(derivedAddress, wallet.receivingAddress);
   });
 
+  test('can derive mainnet address from standard P2PKH scriptPubKey', () async {
+    const privateKeyHex =
+        '0000000000000000000000000000000000000000000000000000000000000001';
+    final address = service.getAddressFromPrivateKey(privateKeyHex);
+    final publicKey = service.getPublicKeyFromPrivateKey(privateKeyHex);
+    final hash160 = service
+        .tryDeriveAddressFromScriptPubKey(
+          '76a914751e76e8199196d454941c45d1b3a323f1433bd688ac',
+        );
+
+    expect(publicKey, isNotEmpty);
+    expect(hash160, address);
+  });
+
+  test('can derive testnet address from standard P2PKH scriptPubKey', () async {
+    final address = service.tryDeriveAddressFromScriptPubKey(
+      '76a9146eb63aedd0ab8d64ac745306ac8b8d4699a04fbc88ac',
+      isTestnet: true,
+    );
+
+    expect(address, 'mqcLvjMSC927erejtAw6w7k8tBB9hm3Ann');
+  });
+
   test('can import wallet from WIF', () async {
     const wif = 'KwDiBf89QgGbjEhKnhXJuH7SUW1x59A5Mta7p4QXQ9VNLYnL8pJb';
     final wallet = await service.importFromWif(wif);

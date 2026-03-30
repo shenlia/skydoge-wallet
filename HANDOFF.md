@@ -375,6 +375,19 @@ WIF 导入相关实现包括：
 - 当前失败会更早暴露在“构造阶段”，而不是等到签名阶段才发现 UTXO 无法本地签名，问题定位成本更低
 - 但这也意味着钱包当前对可花费 UTXO 的支持范围更明确地收窄到标准 P2PKH；若链上资金以其他脚本类型存在，后续仍需专门适配
 
+2026-03-30 缺失地址回退推导进展（当前轮）：
+
+- 已继续排查 `listunspent` 返回值对本地签名的影响，发现当前实现默认依赖节点返回 `address` 字段；若节点省略该字段，即使 `scriptPubKey` 是标准 P2PKH，也会被误过滤掉
+- 已在 `AddressService` 中新增 `tryDeriveAddressFromScriptPubKey(...)`，可从标准 P2PKH `scriptPubKey` 反推出对应 mainnet/testnet 地址
+- 已在 `TransactionService` 的 UTXO 可签名判断中加入回退逻辑：若 `address` 为空，则尝试由 `scriptPubKey` 反推地址，再与 `fromAddress` 对比
+- 这让当前实现对节点返回字段的要求更宽松，在保持仅支持标准 P2PKH 的前提下，减少了对 `listunspent.address` 的硬依赖
+- 已补充测试，覆盖 mainnet/testnet 下从 `scriptPubKey` 反推地址，以及 `address` 缺失时仍可接受标准 P2PKH UTXO 的行为
+
+本轮结论：
+
+- 当前本地签名对节点 `listunspent` 返回格式的鲁棒性更强，即使缺少 `address` 字段，只要 `scriptPubKey` 足够标准，仍可继续构造交易
+- 但这仍只覆盖标准 P2PKH 脚本；如果节点返回的是 P2SH、segwit 或更复杂脚本，当前仍会被显式排除
+
 ---
 
 ### 6. 构建验证缺口

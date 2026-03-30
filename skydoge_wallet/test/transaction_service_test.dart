@@ -425,4 +425,37 @@ void main() {
       ),
     );
   });
+
+  test('buildTransaction accepts signable UTXO even when node omits address field', () async {
+    final ownerWallet = await addressService.deriveWallet(
+      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+    );
+    final fakeRpc = FakeRpcService(
+      config: NetworkConfig.mainnet(),
+      utxos: [
+        const Utxo(
+          txid: '99' * 32,
+          vout: 0,
+          amount: 5000000,
+          confirmations: 6,
+          scriptPubKey: '76a914d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa88ac',
+          address: '',
+        ),
+      ],
+    );
+    final buildService = TransactionService(
+      rpcService: fakeRpc,
+      addressService: addressService,
+    );
+
+    final unsigned = await buildService.buildTransaction(
+      toAddress: '1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc',
+      amount: 1000000,
+      fromAddress: ownerWallet.receivingAddress,
+      feeRate: 2,
+    );
+
+    expect(unsigned.inputs, hasLength(1));
+    expect(unsigned.inputs.first.address, isEmpty);
+  });
 }
