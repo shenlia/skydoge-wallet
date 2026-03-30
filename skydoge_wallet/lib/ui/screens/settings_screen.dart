@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/constants/donation_constants.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/repositories/node_repository.dart';
+import '../widgets/wallet_warning_banner.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -36,6 +37,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (state.warningMessage != null) ...[
+                WalletWarningBanner(message: state.warningMessage!),
+                const SizedBox(height: 16),
+              ],
               _buildSectionHeader('Wallet'),
               _buildWalletInfo(state),
               const SizedBox(height: 24),

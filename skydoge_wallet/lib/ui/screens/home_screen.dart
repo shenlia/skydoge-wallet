@@ -5,6 +5,7 @@ import '../../blocs/wallet/wallet_event.dart';
 import '../../blocs/wallet/wallet_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../widgets/wallet_warning_banner.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/transaction_tile.dart';
 import 'send_screen.dart';
@@ -139,29 +140,9 @@ class _HomeContent extends StatelessWidget {
                     child: Column(
                       children: [
                         if (state.warningMessage != null)
-                          Container(
-                            width: double.infinity,
+                          WalletWarningBanner(
+                            message: state.warningMessage!,
                             margin: const EdgeInsets.only(bottom: 16),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppTheme.warningColor.withOpacity(0.16),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppTheme.warningColor.withOpacity(0.35),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.warning_amber_rounded, color: AppTheme.warningColor),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    state.warningMessage!,
-                                    style: const TextStyle(color: AppTheme.warningColor),
-                                  ),
-                                ),
-                              ],
-                            ),
                           ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,

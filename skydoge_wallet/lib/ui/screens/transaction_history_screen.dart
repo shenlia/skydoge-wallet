@@ -5,6 +5,7 @@ import '../../blocs/wallet/wallet_bloc.dart';
 import '../../blocs/wallet/wallet_event.dart';
 import '../../blocs/wallet/wallet_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../widgets/wallet_warning_banner.dart';
 import '../widgets/transaction_tile.dart';
 
 class TransactionHistoryScreen extends StatelessWidget {
@@ -45,18 +46,8 @@ class TransactionHistoryScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (state.warningMessage != null) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.warningColor.withOpacity(0.16),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.warningColor.withOpacity(0.35)),
-                        ),
-                        child: Text(
-                          state.warningMessage!,
-                          style: const TextStyle(color: AppTheme.warningColor),
-                        ),
+                      WalletWarningBanner(
+                        message: state.warningMessage!,
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -85,19 +76,9 @@ class TransactionHistoryScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (state.warningMessage != null) ...[
-                        Container(
-                          width: double.infinity,
+                        WalletWarningBanner(
+                          message: state.warningMessage!,
                           margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.warningColor.withOpacity(0.16),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppTheme.warningColor.withOpacity(0.35)),
-                          ),
-                          child: Text(
-                            state.warningMessage!,
-                            style: const TextStyle(color: AppTheme.warningColor),
-                          ),
                         ),
                       ],
                       Wrap(
