@@ -6,10 +6,12 @@ import '../screens/transaction_detail_screen.dart';
 
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
+  final bool isTestnet;
 
   const TransactionTile({
     super.key,
     required this.transaction,
+    this.isTestnet = false,
   });
 
   @override
@@ -115,7 +117,10 @@ class TransactionTile extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => TransactionDetailScreen(transaction: transaction),
+              builder: (context) => TransactionDetailScreen(
+                transaction: transaction,
+                isTestnet: isTestnet,
+              ),
             ),
           );
         },

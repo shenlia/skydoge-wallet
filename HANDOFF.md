@@ -293,6 +293,20 @@ WIF 导入相关实现包括：
 - 当前最直接阻塞因素是：缺少可解析的 testnet RPC/浏览器地址，以及缺少 Flutter/Dart 运行环境
 - 在具备可用 testnet 节点或用户提供可访问的自定义 testnet RPC 后，应继续做真实 signed raw tx 广播验证
 
+2026-03-30 UI 补齐进展（当前轮）：
+
+- 已把 `TransactionTile` 的网络态透传到交易详情页，避免 testnet 交易仍错误推断为 mainnet 浏览器链接
+- 已增强 `transaction_history_screen.dart`，新增交易总数、收款数、付款数、donation 数和当前网络的摘要信息
+- 已增强 `transaction_detail_screen.dart`，在概览区新增 `Network` 字段，便于确认当前交易所属网络
+- 已补充交易详情页的 Explorer 区块，支持直接复制 `txid` 和 explorer 链接，减少手动拼接链接成本
+- 已把首页交易列表的详情跳转同步接入网络态，保证首页与历史页进入详情时行为一致
+
+本轮仍未解决：
+
+- 区块浏览器仍未接入真正的外部跳转能力，当前仍以展示和复制链接为主
+- 当前环境仍缺少 `flutter` / `dart`，因此本轮无法执行 Flutter 格式化、测试或真机验证
+- 本地签名的 testnet 广播验证仍受 testnet 域名不可解析影响，主优先级不变
+
 ---
 
 ### 6. 构建验证缺口

@@ -31,6 +31,12 @@ class TransactionHistoryScreen extends StatelessWidget {
           }
 
           final transactions = state.transactions;
+          final incomingCount = transactions
+              .where((tx) => tx.direction.name == 'incoming')
+              .length;
+          final outgoingCount = transactions.length - incomingCount;
+          final donationCount = transactions.where((tx) => tx.isDonation).length;
+
           if (transactions.isEmpty) {
             return const Center(
               child: Padding(
@@ -54,17 +60,88 @@ class TransactionHistoryScreen extends StatelessWidget {
             onRefresh: () async {
               context.read<WalletBloc>().add(const RefreshBalanceEvent());
             },
-            child: ListView.builder(
+            child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 12),
-              itemCount: transactions.length,
-              itemBuilder: (context, index) {
-                return TransactionTile(transaction: transactions[index]);
-              },
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildSummaryChip(
+                        icon: Icons.swap_horiz,
+                        label: '${transactions.length} total',
+                        color: AppTheme.primaryColor,
+                      ),
+                      _buildSummaryChip(
+                        icon: Icons.arrow_downward,
+                        label: '$incomingCount received',
+                        color: AppTheme.successColor,
+                      ),
+                      _buildSummaryChip(
+                        icon: Icons.arrow_upward,
+                        label: '$outgoingCount sent',
+                        color: AppTheme.errorColor,
+                      ),
+                      if (donationCount > 0)
+                        _buildSummaryChip(
+                          icon: Icons.volunteer_activism,
+                          label: '$donationCount donation',
+                          color: AppTheme.accentColor,
+                        ),
+                      _buildSummaryChip(
+                        icon: Icons.public,
+                        label: state.isTestnet ? 'Testnet' : 'Mainnet',
+                        color: state.isTestnet
+                            ? AppTheme.warningColor
+                            : AppTheme.primaryColor,
+                      ),
+                    ],
+                  ),
+                ),
+                ...transactions.map(
+                  (transaction) => TransactionTile(
+                    transaction: transaction,
+                    isTestnet: state.isTestnet,
+                  ),
+                ),
+              ],
             ),
           );
         },
       ),
       backgroundColor: AppTheme.darkBackground,
+    );
+  }
+
+  Widget _buildSummaryChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

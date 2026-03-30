@@ -229,7 +229,10 @@ class _HomeContent extends StatelessWidget {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final tx = transactions[index];
-                        return TransactionTile(transaction: tx);
+                        return TransactionTile(
+                          transaction: tx,
+                          isTestnet: state.isTestnet,
+                        );
                       },
                       childCount: transactions.length,
                     ),
