@@ -9,6 +9,7 @@ import '../../data/models/sidechain_info.dart';
 import '../../services/drivechain_service.dart';
 import '../../services/rpc_service.dart';
 import 'package:provider/provider.dart';
+import '../widgets/wallet_warning_banner.dart';
 
 class SidechainScreen extends StatefulWidget {
   const SidechainScreen({super.key});
@@ -21,6 +22,7 @@ class _SidechainScreenState extends State<SidechainScreen> {
   List<SidechainInfo> _sidechains = [];
   bool _isLoading = true;
   String? _error;
+  String? _walletWarningMessage;
 
   @override
   void initState() {
@@ -32,11 +34,18 @@ class _SidechainScreenState extends State<SidechainScreen> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _walletWarningMessage = null;
     });
 
     try {
       final walletState = context.read<WalletBloc>().state;
-      if (walletState is! WalletLoaded) return;
+      if (walletState is! WalletLoaded) {
+        setState(() {
+          _error = 'Wallet data is not ready yet';
+          _isLoading = false;
+        });
+        return;
+      }
 
       final networkConfig = walletState.isTestnet
           ? NetworkConfig.testnet()
@@ -49,6 +58,7 @@ class _SidechainScreenState extends State<SidechainScreen> {
       setState(() {
         _sidechains = sidechains;
         _isLoading = false;
+        _walletWarningMessage = walletState.warningMessage;
       });
     } catch (e) {
       setState(() {
@@ -60,6 +70,11 @@ class _SidechainScreenState extends State<SidechainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final walletState = context.watch<WalletBloc>().state;
+    final activeWarning = walletState is WalletLoaded
+        ? walletState.warningMessage ?? _walletWarningMessage
+        : _walletWarningMessage;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sidechains'),
@@ -73,10 +88,15 @@ class _SidechainScreenState extends State<SidechainScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
+              ? Padding(
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      if (activeWarning != null) ...[
+                        WalletWarningBanner(message: activeWarning),
+                        const SizedBox(height: 24),
+                      ],
                       const Icon(
                         Icons.error_outline,
                         size: 64,
@@ -85,57 +105,69 @@ class _SidechainScreenState extends State<SidechainScreen> {
                       const SizedBox(height: 16),
                       Text(_error!, textAlign: TextAlign.center),
                       const SizedBox(height: 16),
-                      ElevatedButton(
+                      ElevatedButton.icon(
                         onPressed: _loadSidechains,
-                        child: const Text('Retry'),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
                       ),
                     ],
                   ),
                 )
               : _sidechains.isEmpty
-                  ? _buildEmptyState()
-                  : _buildSidechainsList(),
+                  ? _buildEmptyState(activeWarning)
+                  : _buildSidechainsList(activeWarning),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(String? activeWarning) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.swap_horiz,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'No Sidechains Available',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (activeWarning != null) ...[
+              WalletWarningBanner(message: activeWarning),
+              const SizedBox(height: 24),
+            ],
+            Icon(
+              Icons.swap_horiz,
+              size: 80,
+              color: Colors.grey[400],
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Sidechains will appear here when available',
-            style: TextStyle(color: Colors.grey[400]),
-          ),
-        ],
+            const SizedBox(height: 24),
+            const Text(
+              'No Sidechains Available',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Sidechains will appear here when available',
+              style: TextStyle(color: Colors.grey[400]),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSidechainsList() {
+  Widget _buildSidechainsList(String? activeWarning) {
     return RefreshIndicator(
       onRefresh: _loadSidechains,
-      child: ListView.builder(
+      child: ListView(
         padding: const EdgeInsets.all(16),
-        itemCount: _sidechains.length,
-        itemBuilder: (context, index) {
-          final sidechain = _sidechains[index];
-          return _buildSidechainCard(sidechain);
-        },
+        children: [
+          if (activeWarning != null) ...[
+            WalletWarningBanner(
+              message: activeWarning,
+              margin: const EdgeInsets.only(bottom: 16),
+            ),
+          ],
+          ..._sidechains.map(_buildSidechainCard),
+        ],
       ),
     );
   }

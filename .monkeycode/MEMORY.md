@@ -122,6 +122,13 @@ gh release upload v{x.x.x} build/app/outputs/flutter-apk/app-debug.apk --repo sh
   - 默认持续推进开发、修复和代码质量改进，直到达到可发布 APK 的判断门槛
   - 在未达到可发布状态前，不因常规下一步选择而停下来询问用户
 
+[无需重复确认持续推进]
+- Date: 2026-03-30
+- Context: 用户再次强调不需要重复确认，除非到了需要发布 APK 的节点再汇报
+- Instructions:
+  - 默认继续修复问题并推进版本完善
+  - 在我判断接近可发布 APK 前，不重复询问是否继续
+
 ---
 
 ## 示例：如何备注更新需求

@@ -454,6 +454,18 @@ WIF 导入相关实现包括：
 - 当前 `warningMessage` 的展示已经覆盖首页、交易历史页和设置页，钱包主路径里的节点失败提示更一致
 - 仍未覆盖侧链页等自行维护加载状态的页面；如果继续打磨发布前体验，下一步可以统一侧链页的错误/重试交互
 
+2026-03-30 侧链页降级体验补齐进展（当前轮）：
+
+- 已继续补齐 `SidechainScreen` 的错误展示与重试交互，发现此前侧链页完全独立维护 `_error` / `_isLoading`，不会展示主钱包的 `warningMessage`
+- 已让侧链页在加载侧链信息时同步读取 `WalletLoaded.warningMessage`，并在错误态、空态和正常列表态都支持展示统一的 `WalletWarningBanner`
+- 已修正侧链页在 `WalletBloc` 尚未进入 `WalletLoaded` 时直接 `return` 导致的 loading 卡住问题；当前会明确落成 `Wallet data is not ready yet`
+- 已把侧链页错误态的重试按钮改为带刷新图标的 `ElevatedButton.icon`，和页面顶部刷新动作更一致
+
+本轮结论：
+
+- 当前首页、交易历史页、设置页和侧链页都能更一致地反映“钱包数据仍可用，但节点状态存在异常”这一降级状态
+- 侧链页的基础交互已经更平滑；后续若继续打磨发布前体验，可进一步检查 welcome / send / receive 等辅助页面的异常提示一致性
+
 ---
 
 ### 6. 构建验证缺口
