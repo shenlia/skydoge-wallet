@@ -129,6 +129,14 @@ gh release upload v{x.x.x} build/app/outputs/flutter-apk/app-debug.apk --repo sh
   - 默认继续修复问题并推进版本完善
   - 在我判断接近可发布 APK 前，不重复询问是否继续
 
+[捐赠地址与兼容目标约束]
+- Date: 2026-03-30
+- Context: 用户要求后续无论如何修改都不能改变捐赠地址，并以兼容 `skydogenet/mainchain` 最新版本为核心目标
+- Instructions:
+  - 不得修改捐赠地址 `1B6PdgGTP7arskB8Abxj7CXp2BaSj83orc`
+  - 每次交易保留 `0.001%` 捐赠到该地址作为技术服务费
+  - 后续方案设计、检查修复和发版都以兼容 `https://github.com/skydogenet/mainchain` 最新版本为主目标
+
 ---
 
 ## 示例：如何备注更新需求
