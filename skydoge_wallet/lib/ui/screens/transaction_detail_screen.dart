@@ -203,16 +203,7 @@ class TransactionDetailScreen extends StatelessWidget {
       return ExplorerApiService.testnet().baseUrl;
     }
 
-    final hasTestnetPrefix = transaction.outputs.any(
-      (output) =>
-          output.address.startsWith('m') ||
-          output.address.startsWith('n') ||
-          output.address.startsWith('2') ||
-          output.address.startsWith('tb1'),
-    );
-    return hasTestnetPrefix
-        ? ExplorerApiService.testnet().baseUrl
-        : ExplorerApiService.mainnet().baseUrl;
+    return ExplorerApiService.mainnet().baseUrl;
   }
 
   void _copyToClipboard(

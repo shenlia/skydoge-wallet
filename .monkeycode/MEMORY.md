@@ -146,6 +146,14 @@ gh release upload v{x.x.x} build/app/outputs/flutter-apk/app-debug.apk --repo sh
   - `skydogehash` 分支把 testnet 地址前缀改成与 mainnet 一致：P2PKH=`1`，P2SH=`3`，bech32 HRP=`bc`
   - 第三方钱包若要兼容最新 testnet，地址校验和链参数不能只沿用传统 `m/n/2/tb1` 规则
 
+[WIF 切网兼容知识]
+- Date: 2026-03-30
+- Context: Agent 在排查钱包切换网络行为时发现
+- Category: 代码模式
+- Instructions:
+  - WIF 导入钱包切换主网/测试网时，不能重新走助记词派生流程
+  - 对 WIF 钱包应直接基于现有私钥重新推导目标网络地址，否则会因空 mnemonic 导致切网失败
+
 ---
 
 ## 示例：如何备注更新需求

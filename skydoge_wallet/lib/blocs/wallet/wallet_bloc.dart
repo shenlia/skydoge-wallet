@@ -243,10 +243,22 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
     final currentState = state as WalletLoaded;
 
     try {
-      final walletData = await _addressService.deriveWallet(
-        currentState.wallet.mnemonic,
-        isTestnet: event.isTestnet,
-      );
+      final walletData = currentState.wallet.type == 'wif'
+          ? WalletData(
+              mnemonic: '',
+              seed: currentState.wallet.seed,
+              privateKey: currentState.wallet.privateKey,
+              publicKey: currentState.wallet.publicKey,
+              receivingAddress: _addressService.getAddressFromPrivateKey(
+                currentState.wallet.privateKey,
+                isTestnet: event.isTestnet,
+              ),
+              network: event.isTestnet ? 1 : 0,
+            )
+          : await _addressService.deriveWallet(
+              currentState.wallet.mnemonic,
+              isTestnet: event.isTestnet,
+            );
 
       final updatedWallet = currentState.wallet.copyWith(
         receivingAddress: walletData.receivingAddress,

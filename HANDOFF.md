@@ -549,6 +549,21 @@ flutter build apk --release
 - 对“兼容 `mainchain` 最新版本”而言，当前最值得跟随的是 `skydogehash` 的链参数，而不是仓库里更旧的 `master` testnet 前缀定义
 - 当前钱包的 testnet 兼容策略已从“只接受传统 testnet 地址”升级为“优先兼容 `skydogehash` 新规则，同时兼容旧前缀输入”，这更适合第三方钱包过渡期接入
 
+2026-03-30 RPC 与切网链路兼容排查进展（当前轮）：
+
+- 已继续直接核对 `skydogehash` 的 `src/rpc/rawtransaction.cpp` 与 `src/wallet/rpcwallet.cpp`，确认钱包当前使用的核心 RPC 仍可对齐：`getreceivedbyaddress`、`getwalletinfo`、`listtransactions`、`gettransaction`、`createrawtransaction`、`fundrawtransaction`、`signrawtransaction`、`sendrawtransaction`
+- 已确认 `skydogehash` 仍以 `signrawtransaction` 为主，而不是强依赖 `signrawtransactionwithwallet`；当前 `RpcService.signRawTransaction(...)` 先尝试新接口、再回退旧接口的策略对兼容性是安全的
+- 已继续核查侧链接口，当前 `DrivechainService` 使用 `getsidechaininfo`、`simpledrivechaindeposit`、`simpledrivechainwithdraw`，但旧 spec 里提到的 `getdepositlist` / `getwithdrawallist` 是否在最新主线稳定存在，后续仍需要真实节点验证
+- 已发现切网流程对 WIF 钱包存在隐藏错误：此前 `WalletBloc._onSwitchNetwork(...)` 无论钱包类型都会尝试用助记词重新派生地址，WIF 钱包切网时会因空 mnemonic 失败
+- 已修正上述问题：WIF 钱包切网时改为基于现有私钥重新推导对应网络地址；助记词钱包仍继续走 `deriveWallet(...)`
+- 已继续检查交易详情页的浏览器选择逻辑，发现其之前会根据输出地址前缀猜测 testnet/mainnet；在 `skydogehash` 把 testnet 前缀改成主网样式后，这种猜测已不可靠
+- 已简化交易详情页逻辑：优先信任外层传入的 `isTestnet` 状态决定浏览器，不再尝试通过地址前缀反推网络
+
+本轮结论：
+
+- 当前 RPC 层对 `skydogehash` 的原始交易接口兼容性较好，主要风险已从“接口不存在”转向“真实节点返回结构是否与 UI/解析假设完全一致”
+- 当前切网链路已经补上 WIF 钱包这一处实质性 bug，避免第三方钱包在导入私钥后切换主网/测试网时直接失效
+
 注意：
 
 - 当前代码逻辑已经比旧 spec 更接近 2.0
